@@ -104,15 +104,13 @@ CREATE TRIGGER IF NOT EXISTS memory_text_segment_ad
 AFTER DELETE ON memory_text_segment
 WHEN OLD.text_value IS NOT NULL AND OLD.text_value != ''
 BEGIN
-    INSERT INTO memory_text_fts(memory_text_fts, rowid, segment_id, memory_item_id, source_kind, text_value)
-    VALUES ('delete', OLD.rowid, OLD.id, OLD.memory_item_id, OLD.source_kind, OLD.text_value);
+    DELETE FROM memory_text_fts WHERE rowid = OLD.rowid;
 END;
 
 CREATE TRIGGER IF NOT EXISTS memory_text_segment_au
 AFTER UPDATE ON memory_text_segment
 BEGIN
-    INSERT INTO memory_text_fts(memory_text_fts, rowid, segment_id, memory_item_id, source_kind, text_value)
-    VALUES ('delete', OLD.rowid, OLD.id, OLD.memory_item_id, OLD.source_kind, OLD.text_value);
+    DELETE FROM memory_text_fts WHERE rowid = OLD.rowid;
     INSERT INTO memory_text_fts(rowid, segment_id, memory_item_id, source_kind, text_value)
     SELECT NEW.rowid, NEW.id, NEW.memory_item_id, NEW.source_kind, NEW.text_value
     WHERE NEW.text_value IS NOT NULL AND NEW.text_value != '';

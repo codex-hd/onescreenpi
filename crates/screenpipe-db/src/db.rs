@@ -7580,45 +7580,15 @@ LIMIT ? OFFSET ?
         let sanitized_query = crate::text_normalizer::sanitize_fts5_query(normalized_query);
 
         sqlx::query_as::<_, MemoryItemSearchResult>(
-            r#"WITH ranked_matches AS (
+            r#"WITH raw_matches AS (
                     SELECT
                         mts.id AS matched_segment_id,
                         mts.memory_item_id,
                         mts.text_value AS matched_text,
                         mts.source_kind AS matched_source_kind,
                         mts.confidence AS matched_confidence,
-                        (
-                            (-bm25(memory_text_fts))
-                            + CASE mts.source_kind
-                                WHEN 'clipboard' THEN 4.0
-                                WHEN 'window_title' THEN 3.0
-                                WHEN 'browser_url' THEN 2.5
-                                WHEN 'ocr' THEN 2.0
-                                WHEN 'accessibility' THEN 1.5
-                                WHEN 'app_name' THEN 1.0
-                                ELSE 0.5
-                              END
-                            + (1.0 / (1.0 + ((?2 - mi.occurred_at_ms) / 86400000.0)))
-                        ) AS rank_score,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY mts.memory_item_id
-                            ORDER BY
-                                (
-                                    (-bm25(memory_text_fts))
-                                    + CASE mts.source_kind
-                                        WHEN 'clipboard' THEN 4.0
-                                        WHEN 'window_title' THEN 3.0
-                                        WHEN 'browser_url' THEN 2.5
-                                        WHEN 'ocr' THEN 2.0
-                                        WHEN 'accessibility' THEN 1.5
-                                        WHEN 'app_name' THEN 1.0
-                                        ELSE 0.5
-                                      END
-                                    + (1.0 / (1.0 + ((?2 - mi.occurred_at_ms) / 86400000.0)))
-                                ) DESC,
-                                mts.created_at_ms DESC,
-                                mts.id DESC
-                        ) AS rn
+                        mi.occurred_at_ms,
+                        (-bm25(memory_text_fts)) AS fts_score
                     FROM memory_text_fts
                     JOIN memory_text_segment mts ON mts.id = memory_text_fts.segment_id
                     JOIN memory_item mi ON mi.id = mts.memory_item_id
@@ -7630,6 +7600,46 @@ LIMIT ? OFFSET ?
                       AND (?6 IS NULL OR mi.source_app_name = ?6)
                       AND (?7 IS NULL OR mi.item_type = ?7)
                       AND (?8 IS NULL OR mi.url_domain = ?8)
+                ),
+                ranked_matches AS (
+                    SELECT
+                        rm.matched_segment_id,
+                        rm.memory_item_id,
+                        rm.matched_text,
+                        rm.matched_source_kind,
+                        rm.matched_confidence,
+                        (
+                            rm.fts_score
+                            + CASE rm.matched_source_kind
+                                WHEN 'clipboard' THEN 4.0
+                                WHEN 'window_title' THEN 3.0
+                                WHEN 'browser_url' THEN 2.5
+                                WHEN 'ocr' THEN 2.0
+                                WHEN 'accessibility' THEN 1.5
+                                WHEN 'app_name' THEN 1.0
+                                ELSE 0.5
+                              END
+                            + (1.0 / (1.0 + ((?2 - rm.occurred_at_ms) / 86400000.0)))
+                        ) AS rank_score,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY rm.memory_item_id
+                            ORDER BY
+                                (
+                                    rm.fts_score
+                                    + CASE rm.matched_source_kind
+                                        WHEN 'clipboard' THEN 4.0
+                                        WHEN 'window_title' THEN 3.0
+                                        WHEN 'browser_url' THEN 2.5
+                                        WHEN 'ocr' THEN 2.0
+                                        WHEN 'accessibility' THEN 1.5
+                                        WHEN 'app_name' THEN 1.0
+                                        ELSE 0.5
+                                      END
+                                    + (1.0 / (1.0 + ((?2 - rm.occurred_at_ms) / 86400000.0)))
+                                ) DESC,
+                                rm.matched_segment_id DESC
+                        ) AS rn
+                    FROM raw_matches rm
                 )
                 SELECT
                     mi.id AS memory_item_id,

@@ -5,16 +5,18 @@
 //! VisionManager - Core manager for per-monitor recording tasks
 
 use anyhow::Result;
+use chrono::Utc;
 use dashmap::DashMap;
-use screenpipe_db::DatabaseManager;
+use screenpipe_db::{DatabaseManager, NewCaptureSession};
 use screenpipe_screen::monitor::{get_monitor_by_id, list_monitors};
 use screenpipe_screen::PipelineMetrics;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::runtime::Handle;
 use tokio::sync::{watch, RwLock};
 use tokio::task::JoinHandle;
 use tracing::{debug, error, info, warn};
+use uuid::Uuid;
 
 use crate::event_driven_capture::{CaptureTrigger, TriggerSender};
 use crate::hot_frame_cache::HotFrameCache;
@@ -24,6 +26,7 @@ use crate::power::PowerProfile;
 #[derive(Clone)]
 pub struct VisionManagerConfig {
     pub output_path: String,
+    pub screenpipe_dir: std::path::PathBuf,
     pub ignored_windows: Vec<String>,
     pub included_windows: Vec<String>,
     pub vision_metrics: Arc<PipelineMetrics>,
@@ -57,8 +60,8 @@ pub struct VisionManager {
     db: Arc<DatabaseManager>,
     vision_handle: Handle,
     status: Arc<RwLock<VisionManagerStatus>>,
-    /// Map of monitor_id -> JoinHandle
-    recording_tasks: Arc<DashMap<u32, JoinHandle<()>>>,
+    /// Map of monitor_id -> active recording task metadata.
+    recording_tasks: Arc<DashMap<u32, MonitorRecordingTask>>,
     /// Broadcast sender for capture triggers — shared with UI recorder.
     /// Each monitor subscribes via `trigger_tx.subscribe()`.
     trigger_tx: TriggerSender,
@@ -66,6 +69,12 @@ pub struct VisionManager {
     hot_frame_cache: Option<Arc<HotFrameCache>>,
     /// Power profile receiver — each monitor gets a clone.
     power_profile_rx: Option<watch::Receiver<PowerProfile>>,
+}
+
+struct MonitorRecordingTask {
+    handle: JoinHandle<()>,
+    stop_signal: Arc<AtomicBool>,
+    capture_session_id: String,
 }
 
 impl VisionManager {
@@ -222,9 +231,9 @@ impl VisionManager {
             monitor.height()
         );
 
-        let handle = self.start_event_driven_monitor(monitor_id, monitor).await?;
+        let task = self.start_event_driven_monitor(monitor_id, monitor).await?;
 
-        self.recording_tasks.insert(monitor_id, handle);
+        self.recording_tasks.insert(monitor_id, task);
 
         Ok(())
     }
@@ -234,7 +243,7 @@ impl VisionManager {
         &self,
         monitor_id: u32,
         monitor: screenpipe_screen::monitor::SafeMonitor,
-    ) -> Result<JoinHandle<()>> {
+    ) -> Result<MonitorRecordingTask> {
         use crate::event_driven_capture::{event_driven_capture_loop, EventDrivenCaptureConfig};
         use screenpipe_a11y::tree::TreeWalkerConfig;
         use screenpipe_a11y::ActivityFeed;
@@ -243,6 +252,21 @@ impl VisionManager {
         let db = self.db.clone();
         let output_path = self.config.output_path.clone();
         let device_name = format!("monitor_{}", monitor_id);
+        let capture_session_id = Uuid::new_v4().to_string();
+        let capture_session_id_for_task = capture_session_id.clone();
+        let memory_asset_root = self.config.screenpipe_dir.join("memory-assets");
+        let started_at_ms = Utc::now().timestamp_millis();
+
+        db.insert_capture_session(&NewCaptureSession {
+            id: capture_session_id.clone(),
+            started_at_ms,
+            ended_at_ms: None,
+            trigger: "app_start".to_string(),
+            app_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            device_name: Some(device_name.clone()),
+            created_at_ms: started_at_ms,
+        })
+        .await?;
 
         // Create snapshot writer for this monitor's data directory.
         // Use current power profile's JPEG quality instead of hardcoded 80.
@@ -282,6 +306,7 @@ impl VisionManager {
 
         // Stop signal
         let stop_signal = Arc::new(AtomicBool::new(false));
+        let task_stop_signal = stop_signal.clone();
 
         let monitor = Arc::new(monitor);
         let vision_metrics = self.config.vision_metrics.clone();
@@ -304,6 +329,8 @@ impl VisionManager {
                 monitor,
                 monitor_id,
                 device_name,
+                capture_session_id_for_task,
+                memory_asset_root,
                 snapshot_writer,
                 activity_feed,
                 tree_walker_config,
@@ -327,19 +354,32 @@ impl VisionManager {
             info!("Event-driven capture for monitor {} exited", monitor_id);
         });
 
-        Ok(handle)
+        Ok(MonitorRecordingTask {
+            handle,
+            stop_signal: task_stop_signal,
+            capture_session_id,
+        })
     }
 
     /// Stop recording on a specific monitor
     pub async fn stop_monitor(&self, monitor_id: u32) -> Result<()> {
-        if let Some((_, handle)) = self.recording_tasks.remove(&monitor_id) {
+        if let Some((_, task)) = self.recording_tasks.remove(&monitor_id) {
             info!("Stopping vision recording for monitor {}", monitor_id);
 
-            // Abort the task
-            handle.abort();
-
-            // Wait for it to finish
-            let _ = handle.await;
+            task.stop_signal.store(true, Ordering::Relaxed);
+            let mut handle = task.handle;
+            match tokio::time::timeout(std::time::Duration::from_secs(5), &mut handle).await {
+                Ok(_) => {}
+                Err(_) => {
+                    warn!(
+                        "Timed out waiting for monitor {} capture task to stop cleanly; aborting",
+                        monitor_id
+                    );
+                    handle.abort();
+                    let _ = handle.await;
+                }
+            }
+            self.finish_capture_session(&task.capture_session_id).await?;
 
             Ok(())
         } else {
@@ -355,14 +395,14 @@ impl VisionManager {
         let dead: Vec<u32> = self
             .recording_tasks
             .iter()
-            .filter(|entry| entry.value().is_finished())
+            .filter(|entry| entry.value().handle.is_finished())
             .map(|entry| *entry.key())
             .collect();
 
         for id in &dead {
-            if let Some((_, handle)) = self.recording_tasks.remove(id) {
+            if let Some((_, task)) = self.recording_tasks.remove(id) {
                 // Await to clean up the JoinHandle and capture exit reason
-                match handle.await {
+                match task.handle.await {
                     Ok(()) => {
                         warn!(
                             "monitor {} capture task exited (see prior error log for cause), will be restarted by monitor watcher",
@@ -379,6 +419,12 @@ impl VisionManager {
                         );
                     }
                 }
+                if let Err(err) = self.finish_capture_session(&task.capture_session_id).await {
+                    warn!(
+                        "failed to finish capture session {} for monitor {}: {}",
+                        task.capture_session_id, id, err
+                    );
+                }
             }
         }
 
@@ -392,5 +438,12 @@ impl VisionManager {
     pub async fn shutdown(&self) -> Result<()> {
         info!("Shutting down VisionManager");
         self.stop().await
+    }
+
+    async fn finish_capture_session(&self, session_id: &str) -> Result<()> {
+        self.db
+            .finish_capture_session(session_id, Utc::now().timestamp_millis())
+            .await?;
+        Ok(())
     }
 }

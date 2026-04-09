@@ -48,9 +48,15 @@ Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) —
 
 ---
 
-## [2026-04-09] — Rebrand, OCR validation, and repo handoff
+## [2026-04-09] — Plan simplified, CHANGELOG automation added, rebrand and OCR validation
 
 ### Added / Completed
+
+- **[ONE-128] Simplify implementation plan and pending task visibility** _(done)_
+  Board requested clearer view of pending work. CEO rewrote the [ONE-84 plan document](/ONE/issues/ONE-84#document-plan) with a single critical path: ONE-85 → ONE-86 → ONE-88 → ONE-94 → Beta. Three tasks are code-complete and awaiting board review (ONE-87, ONE-89, ONE-91). ONE-128 closed immediately after CEO addressed it.
+
+- **CHANGELOG automation: `update-changelog` GitHub Actions workflow** _(added)_
+  Added `.github/workflows/update-changelog.yml`. Paperclip agents now trigger CHANGELOG updates via `repository_dispatch` (event type `update-changelog`). The self-hosted `windows-desktop-test` runner on the Windows host handles the git commit and push — agents no longer need `GITHUB_TOKEN` for git operations.
 
 - **[ONE-125] Isolate Windows audio/native dependency blockers from OCR validation** _(done)_
   Confirmed OCR-specific Windows targets compile (`cargo check -p screenpipe-screen`, `cargo bench -p screenpipe-screen --bench ocr_benchmark --no-run` passed under MSVC). Separated remaining native dependency failures (cblas/OpenBLAS, libclang via audio deps) from OCR path. Proposed narrowest isolation path to keep OCR validation unblocked.

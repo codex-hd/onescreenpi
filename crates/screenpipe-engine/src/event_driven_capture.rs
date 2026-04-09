@@ -11,21 +11,23 @@
 use crate::hot_frame_cache::{HotFrame, HotFrameCache};
 use crate::paired_capture::{paired_capture, CaptureContext, PairedCaptureResult};
 use crate::power::PowerProfile;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::Utc;
 use screenpipe_a11y::tree::TreeWalkerConfig;
 use screenpipe_a11y::ActivityFeed;
-use screenpipe_db::DatabaseManager;
+use screenpipe_db::{DatabaseManager, NewMemoryTextSegment};
 use screenpipe_screen::frame_comparison::{FrameComparer, FrameComparisonConfig};
 use screenpipe_screen::monitor::SafeMonitor;
 use screenpipe_screen::snapshot_writer::SnapshotWriter;
 use screenpipe_screen::utils::capture_monitor_image;
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{broadcast, watch};
 use tracing::{debug, error, info, warn};
+use uuid::Uuid;
 
 /// Types of events that trigger a capture.
 #[derive(Debug, Clone, PartialEq)]
@@ -206,6 +208,8 @@ pub async fn event_driven_capture_loop(
     monitor: Arc<SafeMonitor>,
     monitor_id: u32,
     device_name: String,
+    capture_session_id: String,
+    memory_asset_root: std::path::PathBuf,
     snapshot_writer: Arc<SnapshotWriter>,
     activity_feed: ActivityFeed,
     tree_walker_config: TreeWalkerConfig,
@@ -276,6 +280,8 @@ pub async fn event_driven_capture_loop(
             &monitor,
             monitor_id,
             &device_name,
+            &capture_session_id,
+            &memory_asset_root,
             &snapshot_writer,
             &tree_walker_config,
             &CaptureTrigger::Manual,
@@ -514,6 +520,8 @@ pub async fn event_driven_capture_loop(
                         &monitor,
                         monitor_id,
                         &device_name,
+                        &capture_session_id,
+                        &memory_asset_root,
                         &snapshot_writer,
                         &tree_walker_config,
                         &trigger,
@@ -750,6 +758,8 @@ async fn do_capture(
     monitor: &SafeMonitor,
     monitor_id: u32,
     device_name: &str,
+    capture_session_id: &str,
+    memory_asset_root: &Path,
     snapshot_writer: &SnapshotWriter,
     tree_walker_config: &TreeWalkerConfig,
     trigger: &CaptureTrigger,
@@ -961,6 +971,16 @@ async fn do_capture(
     };
 
     let result = paired_capture(&ctx, tree_snapshot.as_ref()).await?;
+    persist_screenshot_memory_item(
+        db,
+        memory_asset_root,
+        capture_session_id,
+        device_name,
+        &result,
+        ctx.image.width(),
+        ctx.image.height(),
+    )
+    .await?;
     let deduped = elements_ref_frame_id.is_some();
     // Extract image from Arc for comparer reuse. Arc::try_unwrap succeeds
     // because paired_capture no longer retains a clone.
@@ -972,9 +992,251 @@ async fn do_capture(
     })
 }
 
+fn normalize_text_field(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+fn normalize_app_id(app_name: &str) -> Option<String> {
+    let mut normalized = String::with_capacity(app_name.len());
+    let mut last_was_separator = false;
+
+    for ch in app_name.chars() {
+        if ch.is_ascii_alphanumeric() {
+            normalized.push(ch.to_ascii_lowercase());
+            last_was_separator = false;
+        } else if !last_was_separator {
+            normalized.push('-');
+            last_was_separator = true;
+        }
+    }
+
+    let normalized = normalized.trim_matches('-').to_string();
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized)
+    }
+}
+
+fn extract_url_domain(url: &str) -> Option<String> {
+    let without_scheme = url.split_once("://").map(|(_, rest)| rest).unwrap_or(url);
+    let authority = without_scheme.split('/').next()?.trim();
+    if authority.is_empty() {
+        return None;
+    }
+
+    let host = authority.rsplit('@').next()?.split(':').next()?.trim();
+    if host.is_empty() {
+        None
+    } else {
+        Some(host.to_ascii_lowercase())
+    }
+}
+
+fn estimate_token_count(text: &str) -> Option<i64> {
+    let count = text.split_whitespace().count() as i64;
+    (count > 0).then_some(count)
+}
+
+fn build_memory_text_segment(
+    memory_item_id: &str,
+    source_kind: &str,
+    text_value: String,
+    created_at_ms: i64,
+) -> NewMemoryTextSegment {
+    let char_count = text_value.chars().count() as i64;
+    let token_estimate = estimate_token_count(&text_value);
+
+    NewMemoryTextSegment {
+        id: Uuid::new_v4().to_string(),
+        memory_item_id: memory_item_id.to_string(),
+        source_kind: source_kind.to_string(),
+        language_code: None,
+        text_value,
+        confidence: Some(1.0),
+        char_count,
+        token_estimate,
+        created_at_ms,
+    }
+}
+
+fn push_text_segment(
+    segments: &mut Vec<NewMemoryTextSegment>,
+    memory_item_id: &str,
+    source_kind: &str,
+    text_value: Option<String>,
+    created_at_ms: i64,
+) {
+    if let Some(text) = text_value {
+        segments.push(build_memory_text_segment(
+            memory_item_id,
+            source_kind,
+            text,
+            created_at_ms,
+        ));
+    }
+}
+
+fn screenshot_asset_metadata(extension: &str) -> (&'static str, &'static str) {
+    match extension.trim_start_matches('.').to_ascii_lowercase().as_str() {
+        "jpg" | "jpeg" => ("screenshot_jpeg", "image/jpeg"),
+        "png" => ("screenshot_png", "image/png"),
+        "webp" => ("screenshot_webp", "image/webp"),
+        _ => ("screenshot_binary", "application/octet-stream"),
+    }
+}
+
+async fn persist_screenshot_memory_item(
+    db: &DatabaseManager,
+    memory_asset_root: &Path,
+    capture_session_id: &str,
+    device_name: &str,
+    result: &PairedCaptureResult,
+    width: u32,
+    height: u32,
+) -> Result<()> {
+    let snapshot_path = Path::new(&result.snapshot_path);
+    let image_bytes = tokio::fs::read(snapshot_path)
+        .await
+        .with_context(|| format!("failed to read snapshot bytes from {}", result.snapshot_path))?;
+
+    let occurred_at_ms = result.captured_at.timestamp_millis();
+    let item_id = Uuid::new_v4().to_string();
+    let app_name = normalize_text_field(result.app_name.as_deref());
+    let window_title = normalize_text_field(result.window_name.as_deref());
+    let browser_url = normalize_text_field(result.browser_url.as_deref());
+
+    let mut segments = Vec::new();
+    match result.text_source.as_deref() {
+        Some("hybrid") => {
+            push_text_segment(
+                &mut segments,
+                &item_id,
+                "accessibility",
+                normalize_text_field(result.accessibility_text.as_deref()),
+                occurred_at_ms,
+            );
+            push_text_segment(
+                &mut segments,
+                &item_id,
+                "ocr",
+                normalize_text_field(result.ocr_text.as_deref()),
+                occurred_at_ms,
+            );
+        }
+        Some("accessibility") => {
+            push_text_segment(
+                &mut segments,
+                &item_id,
+                "accessibility",
+                normalize_text_field(result.accessibility_text.as_deref()),
+                occurred_at_ms,
+            );
+        }
+        Some("ocr") => {
+            push_text_segment(
+                &mut segments,
+                &item_id,
+                "ocr",
+                normalize_text_field(
+                    result
+                        .ocr_text
+                        .as_deref()
+                        .or(result.accessibility_text.as_deref()),
+                ),
+                occurred_at_ms,
+            );
+        }
+        _ => {
+            push_text_segment(
+                &mut segments,
+                &item_id,
+                "accessibility",
+                normalize_text_field(result.accessibility_text.as_deref()),
+                occurred_at_ms,
+            );
+            push_text_segment(
+                &mut segments,
+                &item_id,
+                "ocr",
+                normalize_text_field(result.ocr_text.as_deref()),
+                occurred_at_ms,
+            );
+        }
+    }
+    push_text_segment(
+        &mut segments,
+        &item_id,
+        "app_name",
+        app_name.clone(),
+        occurred_at_ms,
+    );
+    push_text_segment(
+        &mut segments,
+        &item_id,
+        "window_title",
+        window_title.clone(),
+        occurred_at_ms,
+    );
+    push_text_segment(
+        &mut segments,
+        &item_id,
+        "browser_url",
+        browser_url.clone(),
+        occurred_at_ms,
+    );
+
+    let extension = snapshot_path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("jpg");
+    let (asset_type, mime_type) = screenshot_asset_metadata(extension);
+    let item = screenpipe_db::NewMemoryItem {
+        id: item_id.clone(),
+        session_id: Some(capture_session_id.to_string()),
+        occurred_at_ms,
+        captured_at_ms: occurred_at_ms,
+        item_type: "screenshot".to_string(),
+        source_app_id: app_name.as_deref().and_then(normalize_app_id),
+        source_app_name: app_name,
+        window_title,
+        browser_url: browser_url.clone(),
+        url_domain: browser_url.as_deref().and_then(extract_url_domain),
+        display_id: Some(device_name.to_string()),
+        os_user_id: None,
+        is_private_window: false,
+        retention_bucket: "default".to_string(),
+        content_hash: result.content_hash.map(|hash| hash.to_string()),
+        created_at_ms: occurred_at_ms,
+        updated_at_ms: occurred_at_ms,
+    };
+
+    db.ingest_screenshot_memory_item(
+        memory_asset_root,
+        item,
+        Uuid::new_v4().to_string(),
+        asset_type.to_string(),
+        mime_type.to_string(),
+        Some(width as i64),
+        Some(height as i64),
+        extension,
+        &image_bytes,
+        segments,
+    )
+    .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::DateTime;
+    use screenpipe_db::{DatabaseManager, MemoryItemSearchFilters, NewCaptureSession};
+    use tempfile::tempdir;
 
     #[test]
     fn test_capture_trigger_as_str() {
@@ -1080,6 +1342,86 @@ mod tests {
         assert!(config.capture_on_clipboard);
         assert_eq!(config.visual_check_interval_ms, 3_000);
         assert!((config.visual_change_threshold - 0.05).abs() < f64::EPSILON);
+    }
+
+    #[tokio::test]
+    async fn test_persist_screenshot_memory_item_indexes_segments_and_asset() {
+        let db = DatabaseManager::new("sqlite::memory:", Default::default())
+            .await
+            .unwrap();
+        let snapshot_dir = tempdir().unwrap();
+        let asset_dir = tempdir().unwrap();
+        let occurred_at_ms = Utc::now().timestamp_millis();
+        let captured_at = DateTime::from_timestamp_millis(occurred_at_ms).unwrap();
+        let session_id = "session-shot-1".to_string();
+
+        db.insert_capture_session(&NewCaptureSession {
+            id: session_id.clone(),
+            started_at_ms: occurred_at_ms,
+            ended_at_ms: None,
+            trigger: "app_start".to_string(),
+            app_version: Some("test".to_string()),
+            device_name: Some("monitor_1".to_string()),
+            created_at_ms: occurred_at_ms,
+        })
+        .await
+        .unwrap();
+
+        let snapshot_path = snapshot_dir.path().join("capture.jpg");
+        tokio::fs::write(&snapshot_path, b"fake-jpeg-payload")
+            .await
+            .unwrap();
+
+        let result = PairedCaptureResult {
+            frame_id: 1,
+            snapshot_path: snapshot_path.to_string_lossy().to_string(),
+            accessibility_text: Some("invoice summary".to_string()),
+            text_source: Some("hybrid".to_string()),
+            capture_trigger: "manual".to_string(),
+            captured_at,
+            duration_ms: 12,
+            app_name: Some("Microsoft Edge".to_string()),
+            window_name: Some("Quarterly invoice review".to_string()),
+            browser_url: Some("https://example.com/invoice/123".to_string()),
+            content_hash: Some(42),
+            ocr_text: Some("invoice total due 1450 dollars".to_string()),
+        };
+
+        persist_screenshot_memory_item(
+            &db,
+            asset_dir.path(),
+            &session_id,
+            "monitor_1",
+            &result,
+            1280,
+            720,
+        )
+        .await
+        .unwrap();
+
+        let search = db
+            .search_memory_items("1450", &MemoryItemSearchFilters::default(), 10, 0)
+            .await
+            .unwrap();
+        assert_eq!(search.len(), 1);
+        assert_eq!(search[0].session_id.as_deref(), Some(session_id.as_str()));
+        assert_eq!(search[0].display_id.as_deref(), Some("monitor_1"));
+        assert_eq!(search[0].matched_source_kind.as_deref(), Some("ocr"));
+
+        let item_id = &search[0].memory_item_id;
+        let item = db.get_memory_item(item_id).await.unwrap().unwrap();
+        assert_eq!(item.item_type, "screenshot");
+        assert_eq!(item.source_app_id.as_deref(), Some("microsoft-edge"));
+        assert_eq!(item.url_domain.as_deref(), Some("example.com"));
+
+        let segments = db.list_memory_segments(item_id).await.unwrap();
+        assert!(segments.iter().any(|segment| segment.source_kind == "accessibility"));
+        assert!(segments.iter().any(|segment| segment.source_kind == "ocr"));
+        assert!(segments.iter().any(|segment| segment.source_kind == "window_title"));
+
+        let assets = db.list_memory_assets(item_id).await.unwrap();
+        assert_eq!(assets.len(), 1);
+        assert_eq!(assets[0].asset_type, "screenshot_jpeg");
     }
 }
 

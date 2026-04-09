@@ -242,10 +242,12 @@ impl RecordingConfig {
     pub fn to_vision_manager_config(
         &self,
         output_path: String,
+        screenpipe_dir: PathBuf,
         vision_metrics: Arc<PipelineMetrics>,
     ) -> VisionManagerConfig {
         VisionManagerConfig {
             output_path,
+            screenpipe_dir,
             ignored_windows: self.ignored_windows.clone(),
             included_windows: self.included_windows.clone(),
             vision_metrics,

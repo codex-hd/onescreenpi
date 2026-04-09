@@ -75,6 +75,8 @@ pub struct PairedCaptureResult {
     pub browser_url: Option<String>,
     /// Content hash from accessibility tree (for dedup)
     pub content_hash: Option<i64>,
+    /// OCR text captured for this screenshot, including fallback/hybrid paths.
+    pub ocr_text: Option<String>,
 }
 
 /// Performs a paired capture: screenshot + accessibility tree data.
@@ -319,6 +321,7 @@ pub async fn paired_capture(
         window_name: ctx.window_name.map(String::from),
         browser_url: ctx.browser_url.map(String::from),
         content_hash,
+        ocr_text: (!sanitized_ocr_text.is_empty()).then_some(sanitized_ocr_text),
     })
 }
 
