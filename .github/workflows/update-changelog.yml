@@ -1,0 +1,103 @@
+name: Update CHANGELOG.md
+
+# Triggered by Paperclip agents via GitHub API repository_dispatch.
+# The self-hosted Windows runner handles the git commit and push so agents
+# do not need a GITHUB_TOKEN in their own environment.
+#
+# Trigger example (from any Paperclip agent heartbeat):
+#   POST https://api.github.com/repos/cflev/OneScreenPI/dispatches
+#   Authorization: Bearer $GITHUB_TOKEN
+#   {
+#     "event_type": "update-changelog",
+#     "client_payload": {
+#       "changelog_content": "<full CHANGELOG.md text>",
+#       "commit_message": "Update CHANGELOG.md — ONE-84 in_progress",
+#       "triggered_by": "ONE-84"
+#     }
+#   }
+
+on:
+  repository_dispatch:
+    types: [update-changelog]
+
+  # Allow manual trigger from the Actions UI for testing
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: "Commit message"
+        required: false
+        default: "Update CHANGELOG.md [manual trigger]"
+
+jobs:
+  update-changelog:
+    name: Commit CHANGELOG.md update
+    runs-on: [self-hosted, windows-desktop-test]
+
+    # Prevent concurrent runs stomping on each other
+    concurrency:
+      group: changelog-update
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Write CHANGELOG.md from payload
+        if: github.event_name == 'repository_dispatch'
+        shell: pwsh
+        run: |
+          $content = '${{ github.event.client_payload.changelog_content }}'
+          if ([string]::IsNullOrWhiteSpace($content)) {
+            Write-Error "changelog_content payload is empty — nothing to write"
+            exit 1
+          }
+          Set-Content -Path CHANGELOG.md -Value $content -Encoding UTF8
+          Write-Host "CHANGELOG.md written ($(($content -split "`n").Count) lines)"
+
+      - name: Confirm CHANGELOG.md exists (manual trigger path)
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path CHANGELOG.md)) {
+            Write-Error "CHANGELOG.md not found in repo — nothing to update on manual trigger"
+            exit 1
+          }
+          Write-Host "Manual trigger: CHANGELOG.md already present, no content update applied"
+
+      - name: Configure git identity
+        shell: pwsh
+        run: |
+          git config user.name "Paperclip Agent"
+          git config user.email "noreply@paperclip.ing"
+
+      - name: Commit and push
+        shell: pwsh
+        run: |
+          git add CHANGELOG.md
+          $status = git status --porcelain
+          if ([string]::IsNullOrWhiteSpace($status)) {
+            Write-Host "CHANGELOG.md unchanged — nothing to commit"
+            exit 0
+          }
+          $msg = '${{ github.event.client_payload.commit_message }}'
+          if ([string]::IsNullOrWhiteSpace($msg)) {
+            $msg = '${{ inputs.commit_message }}'
+          }
+          if ([string]::IsNullOrWhiteSpace($msg)) {
+            $msg = "Update CHANGELOG.md [automated]"
+          }
+          git commit -m "$msg`n`nCo-Authored-By: Paperclip <noreply@paperclip.ing>"
+          git push origin main
+          Write-Host "CHANGELOG.md pushed to main"
+
+      - name: Summary
+        if: always()
+        shell: pwsh
+        run: |
+          $triggered_by = '${{ github.event.client_payload.triggered_by }}'
+          Write-Host "Triggered by issue: $triggered_by"
+          Write-Host "Run: ${{ github.run_id }}"
+          git log --oneline -3
