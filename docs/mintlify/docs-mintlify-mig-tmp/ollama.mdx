@@ -1,0 +1,82 @@
+---
+title: "Ollama — run AI locally with screenpipe"
+sidebarTitle: "ollama"
+description: "Use Ollama to run AI models locally with screenpipe. Free, private, no API keys needed."
+icon: "ollama-icon.svg"
+---
+
+[Ollama](https://ollama.com) lets you run AI models locally on your machine. screenpipe integrates natively with Ollama — no API keys, no cloud, completely private.
+
+## setup
+
+### 1. install Ollama & pull a model
+
+```bash
+# install from https://ollama.com then:
+ollama run ministral-3
+```
+
+this downloads the model and starts Ollama. you can use any model — `ministral-3` is a good starting point (fast, works on most machines).
+
+### 2. select Ollama in screenpipe
+
+1. open the **screenpipe app**
+2. click the **AI preset selector** (top of the chat/timeline)
+3. click **Ollama**
+4. pick your model from the dropdown (screenpipe auto-detects pulled models)
+5. start chatting
+
+that's it. screenpipe talks to Ollama on `localhost:11434` automatically.
+
+## recommended models
+
+| model | size | best for |
+|-------|------|----------|
+| `ministral-3` | ~2 GB | fast, general use, recommended starting point |
+| `gemma3:4b` | ~3 GB | strong quality for size, good for summaries |
+| `qwen3:4b` | ~3 GB | multilingual, good reasoning |
+| `deepseek-r1:8b` | ~5 GB | strong reasoning, needs 16 GB+ RAM |
+
+pull any model with:
+
+```bash
+ollama pull <model-name>
+```
+
+## requirements
+
+- [Ollama](https://ollama.com) installed and running
+- at least one model pulled
+- screenpipe running
+
+## custom OpenAI-compatible endpoints
+
+if you're running a custom LLM server (Qwen, vLLM, Text Generation WebUI, etc.), screenpipe auto-detects the endpoint format:
+
+1. first tries OpenAI-compatible format: `GET {endpoint}/v1/models`
+2. falls back to Ollama format: `GET {endpoint}/api/tags`
+
+**if your endpoint uses neither format**, you may need to:
+
+- check what path your server uses for model listing (`/models`, `/v1/list`, etc.)
+- if unsure, test with curl first: `curl {your-endpoint}/path-to-models`
+- join our [Discord](https://discord.gg/screenpipe) — we can help troubleshoot custom setups
+
+example: a Qwen server on `http://localhost:5000` with OpenAI-compatible API should work automatically. if screenpipe can't find models, verify the server responds to: `curl http://localhost:5000/v1/models`
+
+## troubleshooting
+
+**"ollama not detected"**
+- make sure Ollama is running: `ollama serve`
+- check it's responding: `curl http://localhost:11434/api/tags`
+
+**model not showing in dropdown?**
+- pull it first: `ollama pull ministral-3`
+- you can also type the model name manually in the input field
+
+**slow responses?**
+- try a smaller model (`ministral-3`)
+- close other GPU-heavy apps
+- ensure you have enough free RAM (model size + ~2 GB overhead)
+
+need help? [join our discord](https://discord.gg/screenpipe) — get recommendations on models and configs from the community.
