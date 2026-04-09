@@ -12,14 +12,11 @@ Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) —
 
 ### In Progress
 
-- **[ONE-85] Windows capture pipeline: screenshot + metadata + OCR ingest** _(in progress)_
-  Event-driven screenshot capture using Windows Graphics Capture API, window metadata extraction via UI Automation, capture preflight policy enforcement, session lifecycle management, and content-hash dedup at ~5s interval.
-
-- **[ONE-86] SQLite storage layer + FTS5 search engine** _(in progress)_
-  Full SQLite schema implementation (capture_session, memory_item, memory_asset, memory_text_segment, retention_policy, deletion_job), content-addressed screenshot file store, FTS5 virtual table with BM25 + recency ranking, and provenance-aware search API.
-
 - **[ONE-84] Implementation planning and sprint coordination** _(in progress)_
   Coordination of implementation plan, subtask breakdown across six phases, and team handoffs based on research from ONE-78 through ONE-83.
+
+- **[ONE-88] Retention cleanup and hard delete system** _(unblocked — ready to start)_
+  Retention enforcement job, batched hard deletes via deletion_job table, delete scopes (single item/time range/app/domain/all), partial failure tracking and retry. Now unblocked by ONE-86 completion.
 
 ### In Review
 
@@ -34,11 +31,8 @@ Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) —
 
 ### Blocked
 
-- **[ONE-88] Retention cleanup and hard delete system** _(blocked — waiting on storage layer)_
-  Retention enforcement job, batched hard deletes via deletion_job table, delete scopes (single item/time range/app/domain/all), partial failure tracking and retry.
-
-- **[ONE-94] QA test strategy and rollout readiness verification** _(blocked — waiting on phases 1–4)_
-  Automated test suite covering capture, search, delete, retention, and exclusion. Manual QA walkthrough of all 11 rollout checklist items from ONE-83. Beta stop condition monitoring setup.
+- **[ONE-94] QA test strategy and rollout readiness verification** _(unblocked — ready to start)_
+  Automated test suite covering capture, search, delete, retention, and exclusion. Manual QA walkthrough of all 11 rollout checklist items from ONE-83. Beta stop condition monitoring setup. Now unblocked by ONE-85 and ONE-86 completion.
 
 - **[ONE-121] Sprint marketing deliverables for OneScreenPI execution** _(blocked)_
   Weekly stakeholder update format, demo narrative and trust/value talking points for first reviewable Windows build. Initial update due 2026-04-14; Sprint 1 review 2026-04-24.
@@ -48,9 +42,15 @@ Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) —
 
 ---
 
-## [2026-04-09] — Plan simplified, CHANGELOG automation added, rebrand and OCR validation
+## [2026-04-09] — Critical path complete: capture pipeline and storage layer done
 
 ### Added / Completed
+
+- **[ONE-85] Windows capture pipeline: screenshot + metadata + OCR ingest** _(done)_
+  Event-driven screenshot capture using Windows Graphics Capture API, window metadata extraction via UI Automation, capture preflight policy enforcement, session lifecycle management, and content-hash dedup at ~5s interval. This was the primary critical path item — its completion unblocks ONE-88 and advances ONE-94.
+
+- **[ONE-86] SQLite storage layer + FTS5 search engine** _(done)_
+  Full SQLite schema implementation (capture_session, memory_item, memory_asset, memory_text_segment, retention_policy, deletion_job), content-addressed screenshot file store, FTS5 virtual table with BM25 + recency ranking, and provenance-aware search API. Unblocks ONE-88 (retention system).
 
 - **[ONE-128] Simplify implementation plan and pending task visibility** _(done)_
   Board requested clearer view of pending work. CEO rewrote the [ONE-84 plan document](/ONE/issues/ONE-84#document-plan) with a single critical path: ONE-85 → ONE-86 → ONE-88 → ONE-94 → Beta. Three tasks are code-complete and awaiting board review (ONE-87, ONE-89, ONE-91). ONE-128 closed immediately after CEO addressed it.
