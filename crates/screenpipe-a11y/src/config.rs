@@ -145,10 +145,20 @@ impl Default for UiCaptureConfig {
             // Incognito / private browsing detection is handled by the
             // `crate::incognito` module with comprehensive localized matching
             // and platform-native APIs (macOS AppleScript).
-            // Bare "password"/"secret" patterns removed — too many false
-            // positives on normal windows (e.g. password manager settings,
-            // "Secret Santa Planning", AWS Secrets Manager, etc.).
-            excluded_window_pattern_strings: vec![],
+            //
+            // Targeted window-title exclusions: patterns that match OS-level
+            // password/secret prompts without hitting common false positives
+            // like "1Password Settings", "Secret Santa Planning", or
+            // "AWS Secrets Manager". All patterns require word-boundary anchors
+            // or specific leading verbs so only actual credential dialogs match.
+            excluded_window_pattern_strings: vec![
+                // OS / browser password prompt dialogs
+                r"(?i)\benter\s+(your\s+)?password\b".to_string(),
+                r"(?i)\bpassword\s+(required|prompt|needed|entry|dialog|request)\b".to_string(),
+                r"(?i)^(sign\s+in|log\s*in|authenticate)\s*[-–—]".to_string(),
+                // Explicit "Secret Notes / Secret Diary" style app windows
+                r"(?i)\bsecret\s+(notes?|diary|journal|vault)\b".to_string(),
+            ],
 
             // Retention
             retention_days: 30,
