@@ -15,30 +15,48 @@ Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) —
 - **[ONE-84] Implementation planning and sprint coordination** _(in progress)_
   Coordination of implementation plan, subtask breakdown across six phases, and team handoffs based on research from ONE-78 through ONE-83.
 
-- **[ONE-88] Retention cleanup and hard delete system** _(unblocked — ready to start)_
-  Retention enforcement job, batched hard deletes via deletion_job table, delete scopes (single item/time range/app/domain/all), partial failure tracking and retry. Now unblocked by ONE-86 completion.
+- **[ONE-88] Retention cleanup and hard delete system** _(in progress — unblocked)_
+  Retention enforcement job, batched hard deletes via deletion_job table, delete scopes (single item/time range/app/domain/all), partial failure tracking and retry. Implementation complete (7/7 DB tests green); unblocked by ONE-133 (native build deps). Engine compile verification in progress.
 
-### In Review
-
-- **[ONE-89] System tray + capture indicator + pause controls** _(in review)_
-  Always-visible capture state UX: tray icon showing active/paused/off states, pause controls (30m/1h/rest-of-day/manual), quick-delete from tray, and immediate state transitions.
-
-- **[ONE-91] Privacy settings, app exclusions, and onboarding walkthrough** _(in review)_
-  Dedicated privacy settings tab with retention controls in plain English, app exclusion management UI, first-run onboarding walkthrough, preview timeline, and explicit assistant-access toggle (off by default).
-
-- **[ONE-87] Clipboard capture and indexing** _(in review)_
-  Clipboard text monitoring as a separate memory_item type, FTS5 indexing of clipboard content, respecting pause/exclusion state, separate 14-day retention policy.
+- **[ONE-94] QA test strategy and rollout readiness verification** _(blocked — waiting on ONE-88)_
+  Automated test suite covering capture, search, delete, retention, and exclusion. Manual QA walkthrough of all 11 rollout checklist items from ONE-83. Waiting on ONE-88 to land. ONE-87/ONE-89/ONE-91 now accepted; build env fully provisioned.
 
 ### Blocked
 
-- **[ONE-94] QA test strategy and rollout readiness verification** _(unblocked — ready to start)_
-  Automated test suite covering capture, search, delete, retention, and exclusion. Manual QA walkthrough of all 11 rollout checklist items from ONE-83. Beta stop condition monitoring setup. Now unblocked by ONE-85 and ONE-86 completion.
-
-- **[ONE-121] Sprint marketing deliverables for OneScreenPI execution** _(blocked)_
+- **[ONE-121] Sprint marketing deliverables for OneScreenPI execution** _(in progress — needs demoable build)_
   Weekly stakeholder update format, demo narrative and trust/value talking points for first reviewable Windows build. Initial update due 2026-04-14; Sprint 1 review 2026-04-24.
 
-- **[ONE-117] Repo rebrand: QA and release validation** _(blocked)_
+- **[ONE-117] Repo rebrand: QA and release validation** _(blocked — no reviewer assigned)_
   Validation of repo rename from `screenpipe` to `OneScreenPI` — checking for broken release flows, workflow names, packaging, installer/update paths, and residual reference cleanup.
+
+### Blocked
+
+- **[ONE-121] Sprint marketing deliverables for OneScreenPI execution** _(blocked — needs demoable build)_
+  Weekly stakeholder update format, demo narrative and trust/value talking points for first reviewable Windows build. Initial update due 2026-04-14; Sprint 1 review 2026-04-24.
+
+- **[ONE-117] Repo rebrand: QA and release validation** _(blocked — no reviewer assigned)_
+  Validation of repo rename from `screenpipe` to `OneScreenPI` — checking for broken release flows, workflow names, packaging, installer/update paths, and residual reference cleanup.
+
+---
+
+## [2026-04-10] — Build environment complete; THREE core features accepted; beta path clear
+
+### Added / Completed
+
+- **[ONE-133] Native build dependencies provisioned in agent workspaces** _(done)_
+  CTO installed full native Linux build dependency sysroot at `/paperclip/.local/sysroot`. Packages: libssl-dev, libwayland-dev, libpipewire-0.3-dev, libspa-0.2-dev, libasound2-dev, libegl-dev, libclang-19-dev, cmake, libopenblas-pthread-dev. All 5 engineering agent adapters updated with `PKG_CONFIG_PATH`, `OPENSSL_*`, `LIBCLANG_PATH`, `LD_LIBRARY_PATH`, `BINDGEN_EXTRA_CLANG_ARGS`. Verified: `cargo check -p screenpipe-engine` ✅, `cargo check -p screenpipe-db` ✅, `cargo test -p screenpipe-db` ✅ 7/7. Also installed `bun@1.3.10` and ran `bun install` for frontend test coverage. Unblocks ONE-88, ONE-89, ONE-91, ONE-94.
+
+- **[ONE-87] Clipboard capture and indexing** _(done — CTO review complete)_
+  Clipboard text monitoring as a separate `memory_item` type with `item_type=clipboard` and `retention_bucket=short`. Copy/cut events indexed in `memory_text_segment` + app/window metadata as provenance segments. Paste-only filtering prevents tracking reads. Verified: `cargo check -p screenpipe-db` ✅, DB tests 7/7 green.
+
+- **[ONE-89] System tray + capture indicator + pause controls** _(done — CTO review complete)_
+  Always-visible capture state UX: persisted `running`/`paused`/`off` state, tray menu with pause (30m/1h/rest-of-day), resume, turn off/on, and quick-delete (5m/today/all). In-app capture-state pill with same controls. Startup honors saved state. Verified: `cargo check -p screenpipe-engine` ✅, frontend tests 191/195.
+
+- **[ONE-91] Privacy settings, app exclusions, and onboarding walkthrough** _(done — CTO review complete)_
+  Privacy walkthrough at first launch explains capture/storage/deletion. `assistantAccessEnabled` defaults to `false` on new installs with explicit UI toggle in Privacy settings. Retention controls surfaced in Privacy tab. Sensitive-app exclusion shortcuts for password managers and 2FA apps. Verified: frontend tests 191/195 passing.
+
+- **[ONE-129] Resolve Rust toolchain availability in agent workspaces** _(done)_
+  Rust toolchain was unavailable in the agent workspace, blocking ONE-88 and ONE-94. CTO resolved the toolchain setup. ONE-88 (retention/delete) and ONE-94 (QA) are now unblocked and ready to proceed.
 
 ---
 
