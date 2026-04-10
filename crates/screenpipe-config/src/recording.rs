@@ -319,7 +319,7 @@ impl Default for RecordingSettings {
             port: 3030,
             power_mode: None,
             use_chinese_mirror: false,
-            analytics_enabled: true,
+            analytics_enabled: false,
             analytics_id: String::new(),
             #[allow(deprecated)]
             enable_input_capture: true,

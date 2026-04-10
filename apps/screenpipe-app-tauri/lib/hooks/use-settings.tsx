@@ -290,7 +290,7 @@ let DEFAULT_SETTINGS: Settings = {
 			teamFilters: { ignoredWindows: [], includedWindows: [], ignoredUrls: [] },
 
 			vadSensitivity: "medium",
-			analyticsEnabled: true,
+			analyticsEnabled: false,
 			audioChunkDuration: 30,
 			useChineseMirror: false,
 			languages: [],
@@ -471,10 +471,11 @@ function createSettingsStore() {
 			needsUpdate = true;
 		}
 
-		// New installs default to assistant access off. Preserve continuity for
-		// existing users by backfilling the setting to true when it was absent.
+		// New installs default to assistant access off. Existing users who never
+		// explicitly opted in also default to off — assistant access requires
+		// a deliberate opt-in, not a silent backfill.
 		if (typeof settings.assistantAccessEnabled !== "boolean") {
-			settings.assistantAccessEnabled = true;
+			settings.assistantAccessEnabled = false;
 			needsUpdate = true;
 		}
 
