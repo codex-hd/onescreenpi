@@ -208,12 +208,27 @@ jobs:
 
           # Bundle mlx.metallib next to CLI binary (macOS aarch64 only)
           # MLX searches for mlx.metallib next to the binary at runtime.
-          # CI cmake uses JIT mode so metallib isn't compiled — download pre-built from GitHub releases.
+          # CI cmake uses JIT mode so metallib isn't compiled — download pre-built from releases.
+          # Primary source: OneScreenPI-controlled release asset.
+          # Fallback: upstream screenpipe/screenpipe (acknowledged compatibility bridge —
+          # remove fallback once mlx-metallib-v0.2.0 is published via publish-mlx-metallib.yml).
           if [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
-            curl -L -f -o screenpipe-${{ env.VERSION }}-${{ matrix.target }}/bin/mlx.metallib \
-              "https://github.com/screenpipe/screenpipe/releases/download/mlx-metallib-v0.2.0/mlx.metallib" \
-              && echo "✅ Bundled mlx.metallib for CLI ($(du -h screenpipe-${{ env.VERSION }}-${{ matrix.target }}/bin/mlx.metallib | cut -f1))" \
-              || echo "⚠️ Failed to download mlx.metallib"
+            MLX_DEST="screenpipe-${{ env.VERSION }}-${{ matrix.target }}/bin/mlx.metallib"
+            MLX_DOWNLOADED=false
+            for MLX_URL in \
+              "https://github.com/cflev/OneScreenPI/releases/download/mlx-metallib-v0.2.0/mlx.metallib" \
+              "https://github.com/screenpipe/screenpipe/releases/download/mlx-metallib-v0.2.0/mlx.metallib"; do
+              if curl -L -f -o "$MLX_DEST" "$MLX_URL"; then
+                echo "✅ Bundled mlx.metallib from $MLX_URL ($(du -h "$MLX_DEST" | cut -f1))"
+                MLX_DOWNLOADED=true
+                break
+              fi
+              echo "⚠️ Download attempt failed: $MLX_URL"
+            done
+            if [[ "$MLX_DOWNLOADED" != "true" ]]; then
+              echo "❌ All mlx.metallib download attempts failed — cannot ship parakeet-mlx without it"
+              exit 1
+            fi
           fi
 
           tar -czf screenpipe-${{ env.VERSION }}-${{ matrix.target }}.tar.gz -C screenpipe-${{ env.VERSION }}-${{ matrix.target }} .

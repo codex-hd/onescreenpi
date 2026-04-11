@@ -374,17 +374,34 @@ fn main() {
             || std::fs::metadata(&metallib).map(|m| m.len()).unwrap_or(0) < min_size;
 
         if needs_download {
-            println!("cargo:warning=mlx-metallib: downloading from GitHub releases...");
-            let url = "https://github.com/screenpipe/screenpipe/releases/download/mlx-metallib-v0.2.0/mlx.metallib";
-            let status = std::process::Command::new("curl")
-                .args(["-L", "-f", "-o", metallib.to_str().unwrap(), url])
-                .status();
-            match status {
-                Ok(s) if s.success() => {
-                    let size = std::fs::metadata(&metallib).map(|m| m.len()).unwrap_or(0);
-                    println!("cargo:warning=mlx-metallib: downloaded ({} MB)", size / 1_000_000);
+            println!("cargo:warning=mlx-metallib: downloading from OneScreenPI releases...");
+            // Primary: OneScreenPI-controlled release asset.
+            // Fallback: upstream screenpipe/screenpipe release (acknowledged compatibility bridge —
+            // remove once mlx-metallib-v0.2.0 is published to cflev/OneScreenPI via publish-mlx-metallib.yml).
+            let primary_url = "https://github.com/cflev/OneScreenPI/releases/download/mlx-metallib-v0.2.0/mlx.metallib";
+            let fallback_url = "https://github.com/screenpipe/screenpipe/releases/download/mlx-metallib-v0.2.0/mlx.metallib";
+            let mut downloaded = false;
+            for url in [primary_url, fallback_url] {
+                let status = std::process::Command::new("curl")
+                    .args(["-L", "-f", "-o", metallib.to_str().unwrap(), url])
+                    .status();
+                if let Ok(s) = status {
+                    if s.success() {
+                        let size = std::fs::metadata(&metallib).map(|m| m.len()).unwrap_or(0);
+                        if size >= min_size {
+                            println!("cargo:warning=mlx-metallib: downloaded from {} ({} MB)", url, size / 1_000_000);
+                            downloaded = true;
+                            break;
+                        }
+                    }
                 }
-                _ => println!("cargo:warning=mlx-metallib: download failed — parakeet-mlx will crash at runtime"),
+                println!("cargo:warning=mlx-metallib: download attempt failed for {}", url);
+            }
+            if !downloaded {
+                // Hard error: a release build without mlx.metallib will silently ship a broken
+                // parakeet-mlx. Fail fast here so CI catches it before packaging.
+                panic!("mlx-metallib: all download attempts failed — publish mlx.metallib to \
+                    cflev/OneScreenPI releases via .github/workflows/publish-mlx-metallib.yml");
             }
         } else {
             let size = std::fs::metadata(&metallib).map(|m| m.len()).unwrap_or(0);

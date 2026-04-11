@@ -1,0 +1,110 @@
+# Publish mlx.metallib to OneScreenPI releases.
+#
+# Run this workflow once (manually) to bootstrap the mlx-metallib-v0.2.0 release asset
+# under cflev/OneScreenPI.  After a successful run, build.rs and release-cli.yml will
+# download mlx.metallib from OneScreenPI instead of the upstream screenpipe/screenpipe
+# repo (the upstream fallback can then be removed from both files).
+#
+# Pre-conditions:
+#   - Must run on a macOS aarch64 runner with a full Xcode + Rust toolchain.
+#   - Metal shader compilation requires the MLX metal feature flag.
+#   - GITHUB_TOKEN needs write:packages + contents scope for the release upload.
+
+name: Publish mlx.metallib to OneScreenPI releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish the asset under (e.g. mlx-metallib-v0.2.0)"
+        required: true
+        default: "mlx-metallib-v0.2.0"
+      force_recompile:
+        description: "Force recompile even if a cached metallib exists"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust (stable, aarch64)
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-apple-darwin
+          rustflags: ""
+
+      - name: Install dependencies
+        run: |
+          brew unlink pkg-config@0.29.2 || true
+          brew install ffmpeg pkg-config
+          brew link --overwrite pkg-config
+
+      - name: Build parakeet-mlx (compiles mlx.metallib via mlx-sys)
+        env:
+          CFLAGS: "-mcpu=apple-m1 -U__ARM_FEATURE_MATMUL_INT8"
+          CXXFLAGS: "-mcpu=apple-m1 -U__ARM_FEATURE_MATMUL_INT8"
+          PKG_CONFIG_PATH: "/usr/local/opt/ffmpeg/lib/pkgconfig"
+          PKG_CONFIG_ALLOW_CROSS: "1"
+        run: |
+          # Build only the Tauri app crate with parakeet-mlx so mlx-sys compiles
+          # the Metal shaders and produces mlx.metallib in the build output.
+          cargo build --release \
+            --target aarch64-apple-darwin \
+            --features metal,parakeet-mlx \
+            -p screenpipe-app-tauri
+
+      - name: Locate and validate mlx.metallib
+        id: locate
+        run: |
+          # build.rs copies mlx.metallib to CARGO_MANIFEST_DIR (src-tauri/).
+          # The file should be present after a successful build.
+          METALLIB="apps/screenpipe-app-tauri/src-tauri/mlx.metallib"
+          if [[ ! -f "$METALLIB" ]]; then
+            echo "❌ mlx.metallib not found at $METALLIB after build"
+            exit 1
+          fi
+          SIZE=$(stat -f%z "$METALLIB")
+          MIN_SIZE=1000000  # 1 MB sanity check — real file is ~84 MB
+          if [[ "$SIZE" -lt "$MIN_SIZE" ]]; then
+            echo "❌ mlx.metallib looks like a placeholder (size=$SIZE). Build may have used JIT mode."
+            exit 1
+          fi
+          echo "✅ mlx.metallib validated ($(du -h "$METALLIB" | cut -f1))"
+          echo "metallib_path=$METALLIB" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update release tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          # Delete existing release if force re-publish or to replace stale asset
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" \
+            --title "mlx.metallib $TAG" \
+            --notes "Pre-compiled MLX Metal shaders for parakeet-mlx (macOS aarch64). \
+              Used by build.rs and release-cli.yml to bundle mlx.metallib without requiring a \
+              full Metal toolchain in every CI runner." \
+            --prerelease
+
+      - name: Upload mlx.metallib asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          METALLIB="${{ steps.locate.outputs.metallib_path }}"
+          gh release upload "$TAG" "$METALLIB" --clobber
+          echo "✅ Uploaded $METALLIB to release $TAG"
+          echo ""
+          echo "Next steps:"
+          echo "1. Verify the asset URL: https://github.com/cflev/OneScreenPI/releases/download/$TAG/mlx.metallib"
+          echo "2. Remove the upstream screenpipe/screenpipe fallback URL from:"
+          echo "   - apps/screenpipe-app-tauri/src-tauri/build.rs"
+          echo "   - .github/workflows/release-cli.yml"
