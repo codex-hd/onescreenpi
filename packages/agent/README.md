@@ -110,4 +110,4 @@ Your Computer                    Your Agent Server
 
 ## License
 
-MIT - Part of [Screenpipe](https://github.com/screenpipe/screenpipe)
+MIT - Part of [OneScreenPI](https://github.com/cflev/OneScreenPI)

@@ -65,4 +65,4 @@ The agent reads these skill files and uses them to answer your questions about y
 
 ## License
 
-MIT - Part of [Screenpipe](https://github.com/screenpipe/screenpipe)
+MIT - Part of [OneScreenPI](https://github.com/cflev/OneScreenPI)

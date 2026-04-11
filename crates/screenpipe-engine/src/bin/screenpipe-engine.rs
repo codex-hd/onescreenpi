@@ -1139,7 +1139,7 @@ async fn main() -> anyhow::Result<()> {
     // Add changelog link
     println!(
         "\n{}",
-        "check latest changes here: https://github.com/screenpipe/screenpipe/releases"
+        "check latest changes here: https://github.com/cflev/OneScreenPI/releases"
             .bright_blue()
             .italic()
     );

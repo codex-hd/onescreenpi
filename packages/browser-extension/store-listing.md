@@ -22,7 +22,7 @@ PRIVACY & SECURITY
 - The extension only activates when Screenpipe's local server is running
 - JavaScript execution is triggered only by your local Screenpipe pipes
 - No tracking, no analytics, no data collection
-- Fully open source: https://github.com/screenpipe/screenpipe
+- Fully open source: https://github.com/cflev/OneScreenPI
 
 REQUIREMENTS
 - Screenpipe desktop app (https://screenpi.pe) running on the same machine
@@ -41,4 +41,4 @@ https://screenpi.pe/privacy
 https://screenpi.pe
 
 ## Support URL
-https://github.com/screenpipe/screenpipe/issues
+https://github.com/cflev/OneScreenPI/issues

@@ -78,7 +78,7 @@
       },
       {
         "label": "github",
-        "href": "https://github.com/screenpipe/screenpipe"
+        "href": "https://github.com/cflev/OneScreenPI"
       }
     ],
     "primary": {
@@ -89,7 +89,7 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/screenpipe/screenpipe",
+      "github": "https://github.com/cflev/OneScreenPI",
       "x": "https://x.com/screen_pipe",
       "discord": "https://discord.gg/screenpipe"
     }

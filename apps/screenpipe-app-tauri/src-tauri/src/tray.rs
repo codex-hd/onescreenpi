@@ -829,7 +829,7 @@ fn handle_menu_event(app_handle: &AppHandle, event: tauri::menu::MenuEvent) {
                                     .open_url("https://screenpi.pe/download", None::<&str>);
                             } else {
                                 let _ = app.opener().open_url(
-                                    "https://github.com/screenpipe/screenpipe/releases",
+                                    "https://github.com/cflev/OneScreenPI/releases",
                                     None::<&str>,
                                 );
                             }

@@ -32,8 +32,8 @@ before you begin:
 
 3. **clone the repository**:
    ```bash
-   git clone https://github.com/screenpipe/screenpipe
-   cd screenpipe
+   git clone https://github.com/cflev/OneScreenPI
+   cd OneScreenPI
    ```
 
 4. **build the project**:
@@ -79,8 +79,8 @@ before you begin:
 
 4. **clone the project**:
    ```powershell
-      git clone https://github.com/screenpipe/screenpipe.git
-      cd screenpipe
+      git clone https://github.com/cflev/OneScreenPI.git
+      cd OneScreenPI
    ```
 5. **build**:
    ```powershell
@@ -112,8 +112,8 @@ before you begin:
 
 4. **clone and build**:
    ```bash
-   git clone https://github.com/screenpipe/screenpipe
-   cd screenpipe
+   git clone https://github.com/cflev/OneScreenPI
+   cd OneScreenPI
    cargo build --release
    ```
 

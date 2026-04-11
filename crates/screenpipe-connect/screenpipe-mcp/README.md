@@ -73,8 +73,8 @@ If your machines are on different networks, expose port 3031 via Tailscale, SSH 
 Clone and build from source:
 
 ```bash
-git clone https://github.com/screenpipe/screenpipe
-cd screenpipe/crates/screenpipe-integrations/screenpipe-mcp
+git clone https://github.com/cflev/OneScreenPI
+cd OneScreenPI/crates/screenpipe-connect/screenpipe-mcp
 npm install
 npm run build
 ```

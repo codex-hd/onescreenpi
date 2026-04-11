@@ -61,7 +61,7 @@ export function FeedbackSection() {
               </div>
             </div>
             <button
-              onClick={() => open("https://github.com/screenpipe/screenpipe/issues")}
+              onClick={() => open("https://github.com/cflev/OneScreenPI/issues")}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
             >
               open →

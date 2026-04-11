@@ -597,7 +597,7 @@ impl UpdatesManager {
         } else {
             // Open GitHub releases
             let _ = self.app.opener().open_url(
-                "https://github.com/screenpipe/screenpipe/releases",
+                "https://github.com/cflev/OneScreenPI/releases",
                 None::<&str>,
             );
         }
