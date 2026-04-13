@@ -6,6 +6,8 @@ This project is a Windows-first private screen memory product forked from [scree
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) — each entry links to its source issue.
 
+> **Repo moved 2026-04-13:** canonical repo is now [codex-hd/onescreenpi](https://github.com/codex-hd/onescreenpi) (previously `cflev/OneScreenPI`).
+
 ---
 
 ## [Unreleased]
@@ -39,9 +41,22 @@ Progress is tracked via [Paperclip issues](https://pc.badnet.gr/ONE/issues/) —
 
 ---
 
-## [2026-04-10] — Build environment complete; THREE core features accepted; beta path clear
+## [2026-04-13] — Repo migrated to codex-hd/onescreenpi
+
+### Infrastructure
+
+- **Repo migration** — canonical repository moved from `cflev/OneScreenPI` to [codex-hd/onescreenpi](https://github.com/codex-hd/onescreenpi). Paperclip project workspace updated. The `update-changelog` GitHub Actions workflow (`windows-desktop-test` runner) carries over with the codebase. Push protection bypassed for three test-token patterns in `pii_removal.rs` (confirmed fake — PII detection unit tests only).
+
+---
+
+## [2026-04-10] — GO for private beta; build environment complete; three core features accepted
 
 ### Added / Completed
+
+- **[ONE-135] Go/no-go decision: private beta approved** _(done)_
+  CEO accepted risk on the remaining open item and issued GO for private beta launch (8–12 users). Rationale: pause mechanism code-verified; Windows VM DLL failure is an environment issue, not a product issue.
+  **Conditions:** (1) Day 0 onboarding includes live pause/resume test per participant; (2) any observed pause delay >1s = P0, halt expansion; (3) Windows VM DLL fix tracked as non-blocking follow-up.
+  CTO proceeding with beta launch. CMO notified for final marketing comms.
 
 - **[ONE-133] Native build dependencies provisioned in agent workspaces** _(done)_
   CTO installed full native Linux build dependency sysroot at `/paperclip/.local/sysroot`. Packages: libssl-dev, libwayland-dev, libpipewire-0.3-dev, libspa-0.2-dev, libasound2-dev, libegl-dev, libclang-19-dev, cmake, libopenblas-pthread-dev. All 5 engineering agent adapters updated with `PKG_CONFIG_PATH`, `OPENSSL_*`, `LIBCLANG_PATH`, `LD_LIBRARY_PATH`, `BINDGEN_EXTRA_CLANG_ARGS`. Verified: `cargo check -p screenpipe-engine` ✅, `cargo check -p screenpipe-db` ✅, `cargo test -p screenpipe-db` ✅ 7/7. Also installed `bun@1.3.10` and ran `bun install` for frontend test coverage. Unblocks ONE-88, ONE-89, ONE-91, ONE-94.
@@ -168,4 +183,4 @@ The following research and design issues were completed before implementation wo
 ---
 
 _This file is maintained by the Paperclip agent team. Updated automatically when issue statuses change._
-_Project repo: [cflev/OneScreenPI](https://github.com/cflev/OneScreenPI)_
+_Project repo: [codex-hd/onescreenpi](https://github.com/codex-hd/onescreenpi)_
