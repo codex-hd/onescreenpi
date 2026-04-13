@@ -779,12 +779,11 @@ async fn main() -> anyhow::Result<()> {
 
     // Create VisionManager for event-driven capture on all monitors
     let (handle, capture_trigger_tx) = if !config.disable_vision {
-        let vision_config =
-            config.to_vision_manager_config(
-                output_path_clone.to_string(),
-                local_data_dir.clone(),
-                vision_metrics.clone(),
-            );
+        let vision_config = config.to_vision_manager_config(
+            output_path_clone.to_string(),
+            local_data_dir.clone(),
+            vision_metrics.clone(),
+        );
         let vision_manager = Arc::new(
             VisionManager::new(vision_config, db_clone.clone(), vision_handle.clone())
                 .with_hot_frame_cache(hot_frame_cache.clone())

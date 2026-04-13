@@ -107,7 +107,10 @@ mod tests {
             .unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].memory_item_id, "item-1");
-        assert_eq!(results[0].matched_source_kind.as_deref(), Some("window_title"));
+        assert_eq!(
+            results[0].matched_source_kind.as_deref(),
+            Some("window_title")
+        );
         assert_eq!(results[0].url_domain.as_deref(), Some("example.com"));
         assert!(results[0].asset_relative_path.is_some());
 
@@ -213,7 +216,11 @@ mod tests {
         .await
         .unwrap();
 
-        let policy = db.get_retention_policy("global", None).await.unwrap().unwrap();
+        let policy = db
+            .get_retention_policy("global", None)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(policy.keep_clipboard_days, Some(14));
         assert_eq!(policy.keep_screenshots_days, Some(30));
         assert_eq!(policy.purge_excluded_immediately, 1);
@@ -230,7 +237,12 @@ mod tests {
             ("expired-clip", "clipboard", days(15), "short"),
             ("keep-shot", "screenshot", days(5), "default"),
             ("excluded-now", "screenshot", 0, "excluded"),
-            ("keep-until-delete", "clipboard", days(60), "keep_until_delete"),
+            (
+                "keep-until-delete",
+                "clipboard",
+                days(60),
+                "keep_until_delete",
+            ),
         ] {
             db.insert_memory_item_bundle(
                 &NewMemoryItem {
@@ -344,7 +356,11 @@ mod tests {
         assert_eq!(result.deleted_items, 1);
         assert_eq!(result.deleted_assets, 1);
         assert!(db.get_memory_item("delete-me").await.unwrap().is_none());
-        assert!(db.list_memory_segments("delete-me").await.unwrap().is_empty());
+        assert!(db
+            .list_memory_segments("delete-me")
+            .await
+            .unwrap()
+            .is_empty());
     }
 
     #[tokio::test]

@@ -32,16 +32,16 @@ use futures::future::try_join_all;
 
 use crate::{
     text_similarity::is_similar_transcription, AudioChunksResponse, AudioDevice, AudioEntry,
-    AudioResult, AudioResultRaw, CaptureSessionRecord, ContentType, DeviceType, Element,
-    ElementRow, ElementSource, FrameData, FrameRow, FrameRowLight, FrameWindowData, InsertUiEvent,
-    DeletionJobFilter, DeletionJobRecord, HardDeleteBatchResult, MeetingRecord,
+    AudioResult, AudioResultRaw, CaptureSessionRecord, ContentType, DeletionJobFilter,
+    DeletionJobRecord, DeviceType, Element, ElementRow, ElementSource, FrameData, FrameRow,
+    FrameRowLight, FrameWindowData, HardDeleteBatchResult, InsertUiEvent, MeetingRecord,
     MemoryAssetDeleteCandidate, MemoryAssetRecord, MemoryDeletionCandidate, MemoryItemRecord,
     MemoryItemSearchFilters, MemoryItemSearchResult, MemoryRecord, MemoryTextSegmentRecord,
     NewCaptureSession, NewMemoryAsset, NewMemoryItem, NewMemoryTextSegment, NewRetentionPolicy,
     OCREntry, OCRResult, OCRResultRaw, OcrEngine, OcrTextBlock, Order, RetentionCleanupPolicy,
-    RetentionPolicyRecord, SearchMatch, SearchMatchGroup, SearchResult, Speaker,
-    StoredMemoryAsset, TagContentType, TextBounds, TextPosition, TimeSeriesChunk, UiContent,
-    UiEventRecord, UiEventRow, VideoMetadata,
+    RetentionPolicyRecord, SearchMatch, SearchMatchGroup, SearchResult, Speaker, StoredMemoryAsset,
+    TagContentType, TextBounds, TextPosition, TimeSeriesChunk, UiContent, UiEventRecord,
+    UiEventRow, VideoMetadata,
 };
 
 /// Time window (in seconds) to check for similar transcriptions across devices.
@@ -418,7 +418,7 @@ impl DatabaseManager {
                         conn: Some(conn),
                         committed: false,
                         _write_permit: Some(permit),
-                    })
+                    });
                 }
                 Err(e) if Self::is_nested_transaction_error(&e) => {
                     // Connection has a stuck transaction — ROLLBACK it and retry.
@@ -4343,10 +4343,7 @@ impl DatabaseManager {
                 "DELETE FROM speaker_embeddings WHERE speaker_id = ?",
                 "speaker embeddings",
             ),
-            (
-                "DELETE FROM speakers WHERE id = ?",
-                "speaker",
-            ),
+            ("DELETE FROM speakers WHERE id = ?", "speaker"),
         ];
 
         // Execute each deletion operation
@@ -4548,7 +4545,13 @@ impl DatabaseManager {
 
         debug!(
             "delete_time_range committed: frames={}, ocr={}, audio_transcriptions={}, audio_chunks={}, video_chunks={}, accessibility={}, ui_events={}",
-            frames_deleted, ocr_deleted, audio_transcriptions_deleted, audio_chunks_deleted, video_chunks_deleted, accessibility_deleted, ui_events_deleted
+            frames_deleted,
+            ocr_deleted,
+            audio_transcriptions_deleted,
+            audio_chunks_deleted,
+            video_chunks_deleted,
+            accessibility_deleted,
+            ui_events_deleted
         );
 
         Ok(DeleteTimeRangeResult {
@@ -4743,7 +4746,12 @@ impl DatabaseManager {
 
         debug!(
             "delete_time_range_local committed: frames={}, ocr={}, audio_transcriptions={}, audio_chunks={}, video_chunks={}, ui_events={}",
-            frames_deleted, ocr_deleted, audio_transcriptions_deleted, audio_chunks_deleted, video_chunks_deleted, ui_events_deleted
+            frames_deleted,
+            ocr_deleted,
+            audio_transcriptions_deleted,
+            audio_chunks_deleted,
+            video_chunks_deleted,
+            ui_events_deleted
         );
 
         Ok(DeleteTimeRangeResult {
@@ -4937,7 +4945,11 @@ impl DatabaseManager {
 
         debug!(
             "delete_time_range_batch committed: frames={}, ocr={}, audio_transcriptions={}, accessibility={}, ui_events={}",
-            frames_deleted, ocr_deleted, audio_transcriptions_deleted, accessibility_deleted, ui_events_deleted
+            frames_deleted,
+            ocr_deleted,
+            audio_transcriptions_deleted,
+            accessibility_deleted,
+            ui_events_deleted
         );
 
         Ok(DeleteTimeRangeResult {
@@ -5085,7 +5097,13 @@ impl DatabaseManager {
 
         debug!(
             "delete_by_machine_id({}) committed: frames={}, ocr={}, audio_transcriptions={}, audio_chunks={}, video_chunks={}, ui_events={}",
-            machine_id, frames_deleted, ocr_deleted, audio_transcriptions_deleted, audio_chunks_deleted, video_chunks_deleted, ui_events_deleted
+            machine_id,
+            frames_deleted,
+            ocr_deleted,
+            audio_transcriptions_deleted,
+            audio_chunks_deleted,
+            video_chunks_deleted,
+            ui_events_deleted
         );
 
         Ok(DeleteTimeRangeResult {
@@ -7344,7 +7362,9 @@ LIMIT ? OFFSET ?
             separated.push_unseparated(")");
         }
         if let Some(start_time_ms) = filter.start_time_ms {
-            query.push(" AND occurred_at_ms >= ").push_bind(start_time_ms);
+            query
+                .push(" AND occurred_at_ms >= ")
+                .push_bind(start_time_ms);
         }
         if let Some(end_time_ms) = filter.end_time_ms {
             query.push(" AND occurred_at_ms <= ").push_bind(end_time_ms);
@@ -7445,8 +7465,7 @@ LIMIT ? OFFSET ?
 
         let asset_paths = self.list_memory_asset_paths_for_items(item_ids).await?;
         let mut tx = self.begin_immediate_with_retry().await?;
-        let mut query =
-            QueryBuilder::<Sqlite>::new("DELETE FROM memory_item WHERE id IN (");
+        let mut query = QueryBuilder::<Sqlite>::new("DELETE FROM memory_item WHERE id IN (");
         let mut separated = query.separated(", ");
         for item_id in item_ids {
             separated.push_bind(item_id);

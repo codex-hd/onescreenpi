@@ -13,8 +13,8 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 use tracing::{info, warn};
 
-use crate::server::AppState;
 use crate::retention::run_hard_delete_filter;
+use crate::server::AppState;
 use screenpipe_db::DeletionJobFilter;
 
 #[derive(Deserialize)]

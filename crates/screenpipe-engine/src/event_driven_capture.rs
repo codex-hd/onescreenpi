@@ -1081,7 +1081,11 @@ fn push_text_segment(
 }
 
 fn screenshot_asset_metadata(extension: &str) -> (&'static str, &'static str) {
-    match extension.trim_start_matches('.').to_ascii_lowercase().as_str() {
+    match extension
+        .trim_start_matches('.')
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "jpg" | "jpeg" => ("screenshot_jpeg", "image/jpeg"),
         "png" => ("screenshot_png", "image/png"),
         "webp" => ("screenshot_webp", "image/webp"),
@@ -1099,9 +1103,12 @@ async fn persist_screenshot_memory_item(
     height: u32,
 ) -> Result<()> {
     let snapshot_path = Path::new(&result.snapshot_path);
-    let image_bytes = tokio::fs::read(snapshot_path)
-        .await
-        .with_context(|| format!("failed to read snapshot bytes from {}", result.snapshot_path))?;
+    let image_bytes = tokio::fs::read(snapshot_path).await.with_context(|| {
+        format!(
+            "failed to read snapshot bytes from {}",
+            result.snapshot_path
+        )
+    })?;
 
     let occurred_at_ms = result.captured_at.timestamp_millis();
     let item_id = Uuid::new_v4().to_string();
@@ -1415,9 +1422,13 @@ mod tests {
         assert_eq!(item.url_domain.as_deref(), Some("example.com"));
 
         let segments = db.list_memory_segments(item_id).await.unwrap();
-        assert!(segments.iter().any(|segment| segment.source_kind == "accessibility"));
+        assert!(segments
+            .iter()
+            .any(|segment| segment.source_kind == "accessibility"));
         assert!(segments.iter().any(|segment| segment.source_kind == "ocr"));
-        assert!(segments.iter().any(|segment| segment.source_kind == "window_title"));
+        assert!(segments
+            .iter()
+            .any(|segment| segment.source_kind == "window_title"));
 
         let assets = db.list_memory_assets(item_id).await.unwrap();
         assert_eq!(assets.len(), 1);

@@ -476,8 +476,8 @@ pub async fn run_retention_cleanup(
         retention: Some(retention_policy_from_config(config)),
         ..Default::default()
     };
-    let summary = run_hard_delete_filter(app_state, "retention_cleanup", filter, config.batch_size)
-        .await?;
+    let summary =
+        run_hard_delete_filter(app_state, "retention_cleanup", filter, config.batch_size).await?;
 
     if summary.deleted_items > 0 {
         maybe_vacuum_database(app_state).await?;
@@ -526,7 +526,10 @@ pub async fn run_hard_delete_filter(
         result.batches += 1;
         result.resolved_items += candidates.len() as u64;
 
-        let item_ids: Vec<String> = candidates.iter().map(|candidate| candidate.id.clone()).collect();
+        let item_ids: Vec<String> = candidates
+            .iter()
+            .map(|candidate| candidate.id.clone())
+            .collect();
         let assets = app_state
             .db
             .list_memory_asset_paths_for_items(&item_ids)

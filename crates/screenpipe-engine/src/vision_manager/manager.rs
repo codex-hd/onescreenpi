@@ -379,7 +379,8 @@ impl VisionManager {
                     let _ = handle.await;
                 }
             }
-            self.finish_capture_session(&task.capture_session_id).await?;
+            self.finish_capture_session(&task.capture_session_id)
+                .await?;
 
             Ok(())
         } else {

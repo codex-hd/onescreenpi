@@ -85,12 +85,9 @@ pub async fn perform_ocr_windows(
 }
 
 #[cfg(target_os = "windows")]
-fn resolve_windows_ocr_engine(
-    languages: &[Language],
-) -> Result<windows::Media::Ocr::OcrEngine> {
+fn resolve_windows_ocr_engine(languages: &[Language]) -> Result<windows::Media::Ocr::OcrEngine> {
     use windows::{
-        core::HSTRING,
-        Globalization::Language as WindowsLanguage,
+        core::HSTRING, Globalization::Language as WindowsLanguage,
         Media::Ocr::OcrEngine as WindowsOcrEngine,
     };
 
