@@ -120,7 +120,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
   const handleStartScreenpipe = async () => {
     setIsLoading(true);
     const toastId = toast({
-      title: "starting screenpipe",
+      title: "starting OneScreenPI",
       description: "please wait...",
       duration: Infinity,
     });
@@ -129,8 +129,8 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       toastId.update({
         id: toastId.id,
-        title: "screenpipe started",
-        description: "screenpipe is now running.",
+        title: "OneScreenPI started",
+        description: "OneScreenPI is now running.",
         duration: 3000,
       });
     } catch (error) {
@@ -138,7 +138,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
       toastId.update({
         id: toastId.id,
         title: "error",
-        description: "failed to start screenpipe.",
+        description: "failed to start OneScreenPI.",
         variant: "destructive",
         duration: 3000,
       });
@@ -151,7 +151,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
   const handleStopScreenpipe = async () => {
     setIsLoading(true);
     const toastId = toast({
-      title: "stopping screenpipe",
+      title: "stopping OneScreenPI",
       description: "please wait...",
       duration: Infinity,
     });
@@ -160,8 +160,8 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       toastId.update({
         id: toastId.id,
-        title: "screenpipe stopped",
-        description: "screenpipe is now stopped.",
+        title: "OneScreenPI stopped",
+        description: "OneScreenPI is now stopped.",
         duration: 3000,
       });
     } catch (error) {
@@ -169,7 +169,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
       toastId.update({
         id: toastId.id,
         title: "error",
-        description: "failed to stop screenpipe.",
+        description: "failed to stop OneScreenPI.",
         variant: "destructive",
         duration: 3000,
       });
@@ -242,7 +242,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>stop screenpipe backend</p>
+                          <p>stop OneScreenPI backend</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -261,7 +261,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>start screenpipe recording</p>
+                          <p>start OneScreenPI recording</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -270,7 +270,7 @@ export const DevModeSettings = ({ localDataDir }: { localDataDir: string }) => {
               </CardContent>
               <CardFooter className="flex flex-col items-center">
                 <p className="text-sm text-muted-foreground">
-                  manually start or stop screenpipe recording
+                  manually start or stop OneScreenPI recording
                 </p>
                 <p className="text-xs text-muted-foreground">
                   (auto started when dev mode is off)

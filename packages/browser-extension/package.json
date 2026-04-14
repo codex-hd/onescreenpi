@@ -1,5 +1,5 @@
 {
-  "name": "@screenpipe/browser-extension",
+  "name": "@onescreenpi/browser-extension",
   "version": "0.1.0",
   "private": true,
   "scripts": {

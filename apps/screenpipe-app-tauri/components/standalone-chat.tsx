@@ -127,7 +127,7 @@ function buildSystemPrompt(): string {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const offsetStr = getTimezoneOffsetString();
 
-  return `You are a helpful AI assistant that can search through the user's Screenpipe data - their screen recordings, audio transcriptions, and UI interactions.
+  return `You are a helpful AI assistant that can search through the user's OneScreenPI data - their screen recordings, audio transcriptions, and UI interactions.
 
 BEHAVIOR RULES:
 - Act immediately on clear requests. NEVER ask for confirmation when the user's intent is obvious.
@@ -2563,11 +2563,11 @@ export function StandaloneChat({ className }: { className?: string } = {}) {
               piRunningConfigRef.current = { provider: providerConfig.provider, model: providerConfig.model, token: settings.user?.token ?? null };
             }
           } else {
-            toast({ title: "Failed to start Screenpipe Cloud", description: result.status === "error" ? result.error : "Unknown error", variant: "destructive" });
+            toast({ title: "Failed to start OneScreenPI Cloud", description: result.status === "error" ? result.error : "Unknown error", variant: "destructive" });
             return;
           }
         } catch (e) {
-          toast({ title: "Failed to start Screenpipe Cloud", description: String(e), variant: "destructive" });
+          toast({ title: "Failed to start OneScreenPI Cloud", description: String(e), variant: "destructive" });
           return;
         } finally {
           setPiStarting(false);
@@ -2909,7 +2909,7 @@ export function StandaloneChat({ className }: { className?: string } = {}) {
     try {
       const filePath = await saveDialog({
         filters: [{ name: "Markdown", extensions: ["md"] }],
-        defaultPath: `screenpipe-chat-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.md`,
+        defaultPath: `onescreenpi-chat-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.md`,
       });
       if (filePath) {
         await writeTextFile(filePath, md);

@@ -28,7 +28,7 @@ const useCases = [
 const searchResults = [
   {
     app: "Chrome",
-    title: "screenpipe pricing memo",
+    title: "OneScreenPI pricing memo",
     time: "11:42 AM",
     reason: "Matched copied text: annual plan uptake",
   },

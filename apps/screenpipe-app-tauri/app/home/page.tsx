@@ -335,8 +335,8 @@ function SettingsPageContent() {
     if (isSectionHidden(activeSection) && activeSection !== "help") {
       return (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-          <img src="/128x128.png" alt="screenpipe" className="w-16 h-16 opacity-30 mb-4" />
-          <p className="text-sm font-mono">screenpipe</p>
+          <img src="/128x128.png" alt="OneScreenPI" className="w-16 h-16 opacity-30 mb-4" />
+          <p className="text-sm font-mono">OneScreenPI</p>
         </div>
       );
     }
@@ -354,8 +354,8 @@ function SettingsPageContent() {
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <img src="/128x128.png" alt="screenpipe" className="w-16 h-16 opacity-30 mb-4" />
-            <p className="text-sm font-mono">screenpipe</p>
+            <img src="/128x128.png" alt="OneScreenPI" className="w-16 h-16 opacity-30 mb-4" />
+            <p className="text-sm font-mono">OneScreenPI</p>
           </div>
         );
     }
@@ -468,7 +468,7 @@ function SettingsPageContent() {
             <div className={cn(isTranslucent ? "vibrant-sidebar-border" : "", "border-b", sidebarCollapsed ? "px-2 py-3" : "px-4 py-3")}>
               {/* Row 1: name + phone + collapse */}
               <div className={cn("flex items-center", sidebarCollapsed ? "justify-center" : "justify-between")}>
-                {!sidebarCollapsed && <h1 className={cn("text-lg font-bold", isTranslucent ? "vibrant-heading" : "text-foreground")}>screenpipe</h1>}
+                {!sidebarCollapsed && <h1 className={cn("text-lg font-bold", isTranslucent ? "vibrant-heading" : "text-foreground")}>OneScreenPI</h1>}
                 <div className="flex items-center gap-1.5">
                   <NotificationBell />
                   <button
@@ -605,7 +605,7 @@ function SettingsPageContent() {
                     <X className="h-3.5 w-3.5" />
                   </button>
                   <h3 className={cn("text-sm font-medium", isTranslucent ? "vibrant-heading" : "text-foreground")}>
-                    Add your team to screenpipe
+                    Add your team to OneScreenPI
                   </h3>
                   <p className={cn("text-xs mt-1", isTranslucent ? "vibrant-sidebar-fg-muted" : "text-muted-foreground")}>
                     Push pipe configs and content filters to all members.
@@ -972,7 +972,7 @@ function ReferralSection() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground mb-4">
-        give <span className="font-semibold text-foreground">10% off</span> screenpipe and get <span className="font-semibold text-foreground">1 free month</span> for each person you refer.
+        give <span className="font-semibold text-foreground">10% off</span> OneScreenPI and get <span className="font-semibold text-foreground">1 free month</span> for each person you refer.
       </p>
 
       <div className="space-y-4">
@@ -980,7 +980,7 @@ function ReferralSection() {
           <h3 className="text-sm font-medium text-foreground mb-2">how it works</h3>
           <div className="space-y-1.5 text-sm text-muted-foreground">
             <p>1. share your invite link</p>
-            <p>2. they sign up and get <span className="font-semibold text-foreground">10% off</span> screenpipe</p>
+            <p>2. they sign up and get <span className="font-semibold text-foreground">10% off</span> OneScreenPI</p>
             <p>3. you get a <span className="font-semibold text-foreground">free month</span> when they start using it</p>
           </div>
         </div>

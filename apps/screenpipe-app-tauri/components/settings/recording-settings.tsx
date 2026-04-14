@@ -830,7 +830,7 @@ export function RecordingSettings() {
 
       toast({
         title: "Settings updated successfully",
-        description: "Screenpipe has been restarted with new settings",
+        description: "OneScreenPI has been restarted with new settings",
       });
     } catch (error) {
       console.error("Failed to update settings:", error);
@@ -1239,7 +1239,7 @@ Your screen is a pipe. Everything you see, hear, and type flows through it. Scre
                 <User className="h-4 w-4 text-muted-foreground shrink-0" />
                 <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
                   Your name
-                  <HelpTooltip text="Your name in transcripts. Click 'train' and speak for 30 seconds to teach screenpipe your voice — it will recognize you across all devices using voice matching." />
+                  <HelpTooltip text="Your name in transcripts. Click 'train' and speak for 30 seconds to teach OneScreenPI your voice — it will recognize you across all devices using voice matching." />
                 </h3>
               </div>
               <div className="flex items-center gap-1.5">
@@ -1309,7 +1309,7 @@ Your screen is a pipe. Everything you see, hear, and type flows through it. Scre
                   <SelectGroup>
                     <SelectLabel className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">cloud</SelectLabel>
                     <SelectItem value="screenpipe-cloud" disabled={!settings.user?.cloud_subscribed}>
-                      Screenpipe Cloud {!settings.user?.cloud_subscribed && "(pro)"}{hwCapability?.recommendedEngine === "screenpipe-cloud" && " ★"}
+                      OneScreenPI Cloud {!settings.user?.cloud_subscribed && "(pro)"}{hwCapability?.recommendedEngine === "screenpipe-cloud" && " ★"}
                     </SelectItem>
                     <SelectItem value="deepgram">Deepgram</SelectItem>
                   </SelectGroup>
@@ -2029,7 +2029,7 @@ Your screen is a pipe. Everything you see, hear, and type flows through it. Scre
         <DialogContent className="max-w-lg">
           <DialogTitle className="text-sm font-medium">Read this aloud</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            speak naturally at your normal pace — this helps screenpipe learn your voice
+            speak naturally at your normal pace — this helps OneScreenPI learn your voice
           </DialogDescription>
           <div className="space-y-4">
 

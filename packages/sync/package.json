@@ -1,7 +1,7 @@
 {
   "name": "@screenpipe/sync",
   "version": "0.5.0",
-  "description": "Sync Screenpipe activity to structured daily summaries. Uses Claude Code CLI for AI extraction.",
+  "description": "Sync OneScreenPI activity to structured daily summaries. Package name stays under @screenpipe/* for compatibility during the rebrand.",
   "type": "module",
   "bin": {
     "screenpipe-sync": "dist/index.js"
@@ -24,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/screenpipe/screenpipe",
+    "url": "https://github.com/cflev/OneScreenPI",
     "directory": "packages/sync"
   },
   "devDependencies": {

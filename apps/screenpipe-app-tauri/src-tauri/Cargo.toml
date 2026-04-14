@@ -1,10 +1,10 @@
 [package]
 name = "screenpipe-app"
 version = "2.3.40"
-description = "24/7 memory for your desktop. 100% local."
+description = "OneScreenPI desktop shell for the local-first capture and memory stack."
 authors = ["you"]
 license = ""
-repository = ""
+repository = "https://github.com/cflev/OneScreenPI"
 default-run = "screenpipe-app"
 edition = "2021"
 rust-version = "1.92"

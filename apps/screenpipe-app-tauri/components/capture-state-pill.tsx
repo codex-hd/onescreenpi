@@ -60,7 +60,7 @@ export function CaptureStatePill() {
       return {
         kind: "attention",
         title: "Capture needs attention",
-        detail: "screenpipe is not recording right now",
+        detail: "OneScreenPI is not recording right now",
       };
     }
     return {
@@ -141,7 +141,7 @@ export function CaptureStatePill() {
                 runAction(
                   () => invoke("capture_resume").then(() => undefined),
                   "capture resumed",
-                  "screenpipe is recording again",
+                  "OneScreenPI is recording again",
                 )
               }
             >
@@ -191,7 +191,7 @@ export function CaptureStatePill() {
                 runAction(
                   () => invoke("capture_start").then(() => undefined),
                   "capture on",
-                  "screenpipe is recording again",
+                  "OneScreenPI is recording again",
                 )
               }
             >
@@ -204,7 +204,7 @@ export function CaptureStatePill() {
                 runAction(
                   () => invoke("capture_stop").then(() => undefined),
                   "capture off",
-                  "screenpipe stopped recording",
+                  "OneScreenPI stopped recording",
                 )
               }
             >

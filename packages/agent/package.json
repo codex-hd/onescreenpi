@@ -1,7 +1,7 @@
 {
   "name": "@screenpipe/agent",
   "version": "0.2.0",
-  "description": "One-liner to connect Screenpipe to your AI agent. Uses Claude Code CLI for AI summaries. Sync screen data, install skills, schedule morning summaries.",
+  "description": "One-liner to connect OneScreenPI data to your AI agent. Package name stays under @screenpipe/* for compatibility during the rebrand.",
   "type": "module",
   "bin": {
     "screenpipe-agent": "dist/index.js"
@@ -26,7 +26,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/screenpipe/screenpipe",
+    "url": "https://github.com/cflev/OneScreenPI",
     "directory": "packages/agent"
   },
   "devDependencies": {

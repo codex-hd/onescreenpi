@@ -463,7 +463,7 @@ export default function EngineStartup({
           transition={{ duration: 0.5 }}
         >
           <h2 className="font-sans text-lg font-bold lowercase">
-            screenpipe sees everything
+            OneScreenPI sees everything
           </h2>
 
           {/* Activity feed */}
@@ -575,9 +575,9 @@ export default function EngineStartup({
         transition={{ duration: 0.4 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="w-12 h-12 mb-2" src="/128x128.png" alt="screenpipe" />
+        <img className="w-12 h-12 mb-2" src="/128x128.png" alt="OneScreenPI" />
         <h1 className="font-mono text-base font-bold text-foreground">
-          screenpipe
+          OneScreenPI
         </h1>
       </motion.div>
 

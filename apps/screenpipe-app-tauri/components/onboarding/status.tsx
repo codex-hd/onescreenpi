@@ -441,8 +441,8 @@ const OnboardingStatus: React.FC<OnboardingStatusProps> = ({
         transition={{ duration: 0.4 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="w-12 h-12 mb-2" src="/128x128.png" alt="screenpipe" />
-        <h1 className="font-mono text-base font-bold text-foreground">screenpipe</h1>
+        <img className="w-12 h-12 mb-2" src="/128x128.png" alt="OneScreenPI" />
+        <h1 className="font-mono text-base font-bold text-foreground">OneScreenPI</h1>
       </motion.div>
 
       {/* Checking state — particle stream at low progress */}

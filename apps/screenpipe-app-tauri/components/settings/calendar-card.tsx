@@ -279,7 +279,7 @@ export function CalendarCard({ onConnectionChange }: { onConnectionChange?: () =
                 {authDenied && (
                   <p className="text-xs text-muted-foreground">
                     Calendar access was denied. Click the button above to open System Settings,
-                    enable screenpipe under{" "}
+                    enable OneScreenPI under{" "}
                     <span className="font-medium">
                       Privacy &amp; Security &rarr; Calendars
                     </span>

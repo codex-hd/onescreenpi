@@ -1,7 +1,7 @@
 {
   "name": "@screenpipe/skills",
   "version": "0.1.1",
-  "description": "Screenpipe skills for AI agents (OpenClaw, Claude Code, etc). Query your screen history, get daily digests, search memories.",
+  "description": "OneScreenPI skills for AI agents (OpenClaw, Claude Code, etc). Package name stays under @screenpipe/* for compatibility during the rebrand.",
   "type": "module",
   "bin": {
     "screenpipe-skills": "dist/index.js"
@@ -27,7 +27,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/screenpipe/screenpipe",
+    "url": "https://github.com/cflev/OneScreenPI",
     "directory": "packages/skills"
   },
   "devDependencies": {

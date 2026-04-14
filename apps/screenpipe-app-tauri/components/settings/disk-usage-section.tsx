@@ -26,7 +26,7 @@ export function DiskUsageSection() {
     return (
       <div className="space-y-6">
         <p className="text-muted-foreground text-sm mb-4">
-          Monitor storage usage for your Screenpipe data
+          Monitor storage usage for your OneScreenPI data
         </p>
         <Card>
           <CardContent className="pt-6">
@@ -191,7 +191,7 @@ export function DiskUsageSection() {
                 <span className={cn("font-medium", diskUsage?.other?.logs_size?.includes("GB") && "text-destructive")}>{diskUsage?.other?.logs_size || "0 KB"}</span>
               </div>
               {diskUsage?.other?.logs_size?.includes("GB") && (
-                <p className="text-[11px] text-destructive mt-1">⚠️ Logs are large. Delete old ones at ~/.screenpipe/*.log</p>
+                <p className="text-[11px] text-destructive mt-1">⚠️ Logs are large. Delete old OneScreenPI logs at ~/.screenpipe/*.log</p>
               )}
             </div>
           )}
@@ -201,4 +201,4 @@ export function DiskUsageSection() {
       <RetentionSettings />
     </div>
   );
-} 
+}

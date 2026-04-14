@@ -196,7 +196,7 @@ export function VaultLockDialog() {
             set up vault encryption
           </DialogTitle>
           <DialogDescription>
-            create a password to encrypt all your screenpipe data at rest.
+            create a password to encrypt all your OneScreenPI data at rest.
             lock/unlock anytime from the tray menu or settings shortcut.
           </DialogDescription>
         </DialogHeader>

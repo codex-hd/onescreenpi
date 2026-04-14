@@ -166,7 +166,7 @@ export default function PrivacyWalkthrough({
             know what gets captured
           </h1>
           <p className="text-sm text-muted-foreground">
-            screenpipe should feel clear and controllable from minute one.
+            OneScreenPI should feel clear and controllable from minute one.
           </p>
         </div>
 

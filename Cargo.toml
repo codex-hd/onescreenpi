@@ -8,8 +8,8 @@ resolver = "2"
 [workspace.package]
 version = "0.3.269"
 authors = ["louis030195 <hi@louis030195.com>"]
-description = ""
-repository = "https://github.com/screenpipe/screenpipe"
+description = "OneScreenPI backend and capture workspace."
+repository = "https://github.com/cflev/OneScreenPI"
 license = "MIT OR Apache-2.0"
 edition = "2021"
 
