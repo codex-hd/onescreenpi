@@ -3031,6 +3031,7 @@ export function StandaloneChat({ className }: { className?: string } = {}) {
           </div>
         </div>
       ) : (
+      <>
       <div className="flex-1 flex overflow-hidden">
         {/* History Sidebar */}
         <AnimatePresence>
@@ -3445,10 +3446,7 @@ export function StandaloneChat({ className }: { className?: string } = {}) {
       )}
       </div>
       </div> {/* End of main content area with history sidebar */}
-      )}
 
-      {!assistantAccessBlocked && (
-      <>
       {/* Input */}
       <div className="relative border-t border-border/50 bg-gradient-to-t from-muted/20 to-transparent">
         <div className="max-w-4xl mx-auto w-full">
