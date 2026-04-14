@@ -6,6 +6,14 @@ import { $ } from 'bun'
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
+async function fileExists(p) {
+	try {
+		await fs.access(p);
+		return true;
+	} catch {
+		return false;
+	}
+}
 import { setupOpenBlas } from './setup_openblas.js'
 import { findWget, find7z } from './find_tools.js'
 
@@ -154,7 +162,7 @@ async function copyBunBinary() {
 	} else if (platform === 'linux') {
 		bunDest1 = path.join(cwd, 'bun-x86_64-unknown-linux-gnu');
 
-		if (await fs.exists(bunDest1)) {
+		if (await fileExists(bunDest1)) {
 			console.log('bun binary already exists for tauri.');
 			return;
 		}
@@ -183,7 +191,7 @@ async function copyBunBinary() {
 		bunDest1 = path.join(cwd, 'bun-aarch64-apple-darwin');
 		bunDest2 = path.join(cwd, 'bun-x86_64-apple-darwin');
 
-		if (await fs.exists(bunDest1) && await fs.exists(bunDest2)) {
+		if (await fileExists(bunDest1) && await fileExists(bunDest2)) {
 			console.log('bun binaries already exist for both macOS architectures.');
 			return;
 		}
@@ -198,7 +206,7 @@ async function copyBunBinary() {
 		];
 
 		for (const { url, dest, label } of archMap) {
-			if (await fs.exists(dest)) {
+			if (await fileExists(dest)) {
 				console.log(`bun ${label} binary already exists, skipping download.`);
 				continue;
 			}
@@ -223,7 +231,7 @@ async function copyBunBinary() {
 		return;
 	}
 
-	if (await fs.exists(bunDest1)) {
+	if (await fileExists(bunDest1)) {
 		console.log('bun binary already exists for tauri.');
 		return;
 	}
@@ -286,7 +294,7 @@ if (platform == 'linux') {
 	}
 
 	// Setup FFMPEG
-	if (!(await fs.exists(config.ffmpegRealname))) {
+	if (!(await fileExists(config.ffmpegRealname))) {
 		await $`wget --no-config -nc ${config.linux.ffmpegUrl} -O ${config.linux.ffmpegName}.tar.xz`
 		await $`tar xf ${config.linux.ffmpegName}.tar.xz`
 		await $`mv ${config.linux.ffmpegName} ${config.ffmpegRealname}`
@@ -295,7 +303,7 @@ if (platform == 'linux') {
 		console.log('FFMPEG already exists');
 	}
 		// Setup TESSERACT
-	if (!(await fs.exists(config.linux.tesseractName))) {
+	if (!(await fileExists(config.linux.tesseractName))) {
 		await $`wget --no-config -nc ${config.linux.tesseractUrl} -O ${config.linux.tesseractName}`
 		await $`chmod +x ${config.linux.tesseractName}` // Make the Tesseract binary executable
 	} else {
@@ -407,7 +415,7 @@ if (platform == 'windows') {
 	const sevenZ = await find7z();
 
 	// Setup FFMPEG (x64: gyan.dev; arm64: tordona/ffmpeg-win-arm64)
-	if (!(await fs.exists(config.ffmpegRealname))) {
+	if (!(await fileExists(config.ffmpegRealname))) {
 		if (winArch === 'arm64') {
 			// Resolve download URL dynamically from GitHub API (daily autobuilds change filenames)
 			const apiUrl = `https://api.github.com/repos/${config.windows.ffmpegArm64GithubRepo}/releases/latest`
@@ -446,7 +454,7 @@ if (platform == 'windows') {
 		const ffmpegLib = path.join(cwd, config.ffmpegRealname, 'lib')
 		await fs.mkdir(ffmpegLib, { recursive: true })
 		const placeholder = path.join(ffmpegLib, '.gitkeep')
-		if (!(await fs.exists(placeholder))) {
+		if (!(await fileExists(placeholder))) {
 			await fs.writeFile(placeholder, '')
 		}
 	}
@@ -470,7 +478,7 @@ if (platform == 'windows') {
 if (platform == 'macos') {
   // Setup ffmpeg and ffprobe for both arm64 and x86_64
   // ref: https://github.com/nathanbabcock/ffmpeg-sidecar/blob/b0ab2e1233451f219e302bf78cbbb6a5a8e85aa4/src/download.rs#L31
-  if (!(await fs.exists(`ffmpeg-aarch64-apple-darwin`))) {
+  if (!(await fileExists(`ffmpeg-aarch64-apple-darwin`))) {
     await $`wget --no-config ${config.macos.ffmpegUrlArm} -O ffmpeg-aarch64.zip`;
     await $`unzip -o ffmpeg-aarch64.zip -d ffmpeg-aarch64`;
     await $`cp ffmpeg-aarch64/ffmpeg ffmpeg-aarch64-apple-darwin`;
@@ -478,7 +486,7 @@ if (platform == 'macos') {
     await $`rm -rf ffmpeg-aarch64`;
   }
 
-  if (!(await fs.exists(`ffprobe-aarch64-apple-darwin`))) {
+  if (!(await fileExists(`ffprobe-aarch64-apple-darwin`))) {
     await $`wget --no-config ${config.macos.ffprobeUrlArm} -O ffprobe-aarch64.zip`;
     await $`unzip -o ffprobe-aarch64.zip -d ffprobe-aarch64`;
     await $`cp ffprobe-aarch64/ffprobe ffprobe-aarch64-apple-darwin`;
@@ -486,7 +494,7 @@ if (platform == 'macos') {
     await $`rm -rf ffprobe-aarch64`;
   }
 
-  if (!(await fs.exists(`ffmpeg-x86_64-apple-darwin`))) {
+  if (!(await fileExists(`ffmpeg-x86_64-apple-darwin`))) {
     await $`wget --no-config ${config.macos.ffmpegUrlx86_64} -O ffmpeg-x86_64.zip`;
     await $`unzip -o ffmpeg-x86_64.zip -d ffmpeg-x86_64`;
     await $`cp ffmpeg-x86_64/ffmpeg ffmpeg-x86_64-apple-darwin`;
@@ -494,7 +502,7 @@ if (platform == 'macos') {
     await $`rm -rf ffmpeg-x86_64`;
   }
 
-  if (!(await fs.exists(`ffprobe-x86_64-apple-darwin`))) {
+  if (!(await fileExists(`ffprobe-x86_64-apple-darwin`))) {
     await $`wget --no-config ${config.macos.ffprobeUrlx86_64} -O ffprobe-x86_64.zip`;
     await $`unzip -o ffprobe-x86_64.zip -d ffprobe-x86_64`;
     await $`cp ffprobe-x86_64/ffprobe ffprobe-x86_64-apple-darwin`;

@@ -12,6 +12,14 @@ import { $ } from 'bun'
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
+async function fileExists(p) {
+	try {
+		await fs.access(p);
+		return true;
+	} catch {
+		return false;
+	}
+}
 import { findWget, find7z } from './find_tools.js'
 
 const config = {
@@ -32,7 +40,7 @@ export async function setupOpenBlas({ cwd, winArch }) {
 	const wgetPath = await findWget()
 	const sevenZ = await find7z()
 
-	if (!(await fs.exists(path.join(cwd, config.openblasRealname)))) {
+	if (!(await fileExists(path.join(cwd, config.openblasRealname)))) {
 		if (winArch === 'arm64') {
 			await $`${wgetPath} --no-config --tries=5 ${config.windows.openblasUrlArm64} -O ${config.windows.openblasNameArm64}.zip`
 			await $`${sevenZ} x ${config.windows.openblasNameArm64}.zip -o${config.openblasRealname} -y`
@@ -62,7 +70,7 @@ export async function setupOpenBlas({ cwd, winArch }) {
 	// Also rename openblas.dll/.lib → libopenblas.dll/.lib (runtime + MSVC import library).
 	if (winArch === 'arm64') {
 		const includeOpenblas = path.join(openblasPath, 'include', 'openblas')
-		if (await fs.exists(includeOpenblas)) {
+		if (await fileExists(includeOpenblas)) {
 			const includePath = path.join(openblasPath, 'include')
 			const subEntries = await fs.readdir(includeOpenblas, { withFileTypes: true })
 			for (const e of subEntries) {
@@ -73,13 +81,13 @@ export async function setupOpenBlas({ cwd, winArch }) {
 		// Rename openblas.dll → libopenblas.dll (expected by runtime loader)
 		const openblasDll = path.join(openblasPath, 'bin', 'openblas.dll')
 		const libOpenblasDll = path.join(openblasPath, 'bin', 'libopenblas.dll')
-		if (await fs.exists(openblasDll)) {
+		if (await fileExists(openblasDll)) {
 			await fs.rename(openblasDll, libOpenblasDll)
 		}
 		// Rename openblas.lib → libopenblas.lib (MSVC import library for linking)
 		const openblasLib = path.join(openblasPath, 'lib', 'openblas.lib')
 		const libOpenblasLib = path.join(openblasPath, 'lib', 'libopenblas.lib')
-		if (await fs.exists(openblasLib)) {
+		if (await fileExists(openblasLib)) {
 			await fs.rename(openblasLib, libOpenblasLib)
 		}
 	}
